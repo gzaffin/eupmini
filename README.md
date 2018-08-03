@@ -1,11 +1,11 @@
 # eupmini
 This is performance music driver EUPHONY (Extension ".Eup") format player using Simple DirectMedia Layer (SDL) version 2.0.x
 
-This project is not started from scratch, in the begining it was coded for GNU/Linux, then Windows o.s. binary version exists maded by anonymous K.-Sama, Mr.Sen and others (http://www.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/).
+This project is not started from scratch, in the begining it was coded for GNU/Linux, then Windows o.s. binary version exists made by anonymous K.-Sama, Mr.Sen and others (http://www.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/).
 
 EUPHONY format music data was broadly used with past years favourite machine Fujitsu FM TOWNS.
 
-HEat-Oh! is the first EUP creation software and text editor that was published in FMTOWNS magazine. HEat-Oh! is free software (= freeware) developed by TaroPYON (now taro), the name stands for "High EUP active tool". It was a tool for MML compiling and creating of .EUP format file, but, because of its characteristics, it acts also has a powerful text editor.
+HEat-Oh! is the first EUP creation software and text editor that was published in FMTOWNS magazine. HEat-Oh! is free software (= freeware) developed by TaroPYON (now taro), the name stands for "High EUP active tool". It was a tool for MML compiling and creating of .EUP format file, but, because of its characteristics, it acts also as a powerful text editor.
 
 Copyright
 1995-1997, 2000 Tomoaki Hayasaka.
