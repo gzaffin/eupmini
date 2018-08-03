@@ -1,0 +1,150 @@
+.\" -*- nroff -*-
+.\"
+.\" EUPPlayer - EUP Interpreter and Audio Synthesizer.
+.\" Copyright (C) 1998,2000 Tomoaki HAYASAKA.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or (at
+.\" your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.\"
+.\" eupplay.1 - nroff -man source for eupplay man page.
+.\"
+.\" $Id: eupplay.1.in,v 1.4 2000/04/12 23:21:44 hayasaka Exp $
+.\"
+.TH EUPPLAY 1 "13 Apr, 2000" "@!VERSION!@" ""
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH NAME
+eupplay \- interpret EUP file and produce synthesized PCM data.
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH SYNOPSIS
+.PD 0
+.BR eupplay " [ "
+.B -r
+.IR rate " ] [ "
+.B -t
+.IR format " ] [ "
+.B -v
+.IR level " ] [ "
+.B -d
+.IR channel " ] filename"
+.P
+.PD 1
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH DESCRIPTION
+.B eupplay
+is a EUP music module interpreter and audio synthesizer.
+.B eupplay
+reads EUP file and corresponding FM and PCM instruments,
+simulate the behavior of Fujitsu's EUP player, FM-TOWNS' sound BIOS
+and internal sound devices, and generates PCM audio data.
+
+EUP is originally introduced in Fujitsu's music software Euphony, and
+was accepted and widely used by the community of FM-TOWNS users.
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH EXAMPLES
+.TP
+.BI eupplay\ pon29.eup\ >/dev/dsp
+Play the pon29.eup at 8bit/sample, 8000Hz, put to DSP device directly.
+.TP
+.BI eupplayer\ -r\ 22050\ pon29.eup\ |\ sox\ -r\ 22050\ -t\ .ub\ -\ -t\ .wav\ -\ |\ bplay
+Play the pon29.eup at 22050Hz, convert the output to wav with 
+.B sox,
+play it with
+.B bplay.
+.PP
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH OPTIONS
+.TP
+\fB\-r \fIrate\fR
+Set the output rate to
+.I num
+samples/sec.  By default the output rate is 8000 samples/sec.
+.TP
+\fB\-t \fIformat\fR
+Set the output sample format to
+.I format.
+The possible formats are:
+.RS
+.HP
+  .ub - unsigned 8bit.
+.HP
+  .sb - signed 8bit.
+.HP
+  .uw - unsigned 16bit, LSB first.
+.HP
+  .sw - signed 16bit, LSB first.
+.HP
+  .wu - unsigned 16bit, MSB first.
+.HP
+  .ws - signed 16bit, MSB first.
+.\".RE
+.P
+By default the output sample format is .ub (unsigned 8bit).
+.PP
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH ENVIRONMENT
+.TP
+.B EUP_FMINST
+If
+.B EUP_FMINST
+is set, its value is used as the path to search for FM instrument data
+files if none is found in the directory of the EUP file.  If it is not
+set,
+.B .:/usr/local/share/fj2/tone:/usr/share/fj2/tone
+is used.
+.TP
+.B EUP_PCMINST
+If
+.B EUP_PCMINST
+is set, its value is used as the path to search for PCM instrument
+data files if none is found in the directory of the EUP file.  If it
+is not set,
+.B .:/usr/local/share/fj2/tone:/usr/share/fj2/tone
+is used.
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH BUGS
+.B eupplay
+can not produce stereo output :-(
+.PP
+.B eupplay
+can not drive FM-TOWNS' internal audio devices even if you
+run it on FM-TOWNS.
+.PP
+Many features, such as LFO, are not yet implemented.
+.PP
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH AUTHOR
+Tomoaki HAYASAKA <hayasaka@postman.riken.go.jp>.
+.PP
+.\"
+.\"------------------------------------------------------------------
+.\"
+.SH SEE ALSO
+.BR sox "(1), " bplay "(1)"

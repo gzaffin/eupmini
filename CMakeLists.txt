@@ -1,0 +1,35 @@
+if(MSVC OR MSYS)
+	cmake_minimum_required(VERSION 3.10)
+endif()
+
+if(UNIX)
+	cmake_minimum_required(VERSION 3.0)
+endif()
+
+#add_compile_definitions(PACKAGE=\"eupplayer\" VERSION=\"0.008\" STDC_HEADERS=1 HAVE_UNISTD_H=1 EUPPLAYER_LITTLE_ENDIAN=1)
+add_definitions(-DPACKAGE=\"eupplayer\" -DVERSION=\"0.008\" -DSTDC_HEADERS=1 -DHAVE_UNISTD_H=1 -DEUPPLAYER_LITTLE_ENDIAN=1)
+
+if(MSVC)
+	set(CMAKE_C_FLAGS "/Ox /W3 /wd4996")
+	#add_compile_definitions(SDL_MAIN_HANDLED=1)
+	add_definitions(-DSDL_MAIN_HANDLED=1)
+	find_package(SDL2 REQUIRED)
+endif()
+if(UNIX OR MSYS)
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(SDL2 REQUIRED sdl2)
+endif()
+
+file(GLOB SOURCES eupplay.cpp eupplayer.cpp eupplayer_townsEmulator.cpp eupplayer_townsIinternal.cpp sintbl.cpp)
+
+add_executable(eupplay EXCLUDE_FROM_ALL ${SOURCES})
+
+if(MSVC)
+	target_link_libraries(eupplay SDL2)
+endif()
+
+if(UNIX OR MSYS)
+	target_link_libraries(eupplay stdc++ ${SDL2_LIBRARIES})
+	target_include_directories(eupplay PUBLIC ${SDL2_INCLUDE_DIRS})
+	target_compile_options(eupplay PUBLIC ${SDL2_FLAGS_OTHERS})
+endif()
