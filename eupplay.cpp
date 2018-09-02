@@ -213,6 +213,7 @@ static FILE *openFile_inPath(string const &filename, string const &path)
     }
     if (f == NULL) {
         fprintf(stderr, "error finding %s\n", filename.c_str());
+        fflush(stderr);
     }
 
     return f;
@@ -243,6 +244,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
 
         if (statbufEupFile.st_size < 2048 + 6 + 6) {
             fprintf(stderr, "%s: too short file.\n", nameOfEupFile.c_str());
+            fflush(stderr);
             fclose(f);
             return NULL;
         }
@@ -329,6 +331,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
             u_char *buf1 = new u_char[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -339,6 +342,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
             u_char *buf1 = new u_char[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -376,6 +380,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
             u_char *buf1 = new u_char[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -386,6 +391,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
             u_char *buf1 = new u_char[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -434,6 +440,7 @@ int main(int argc, char **argv)
     dev->rate(streamAudioRate); /* Hz */
 
     /*fprintf(stderr, "sizeof(int16_t) = %d\n", (int)sizeof(int16_t));*/
+    /*fflush(stderr);*/
 
     int c;
     while ((c = getopt(argc, argv, "v:d:o:")) != -1) {
@@ -455,6 +462,7 @@ int main(int argc, char **argv)
                 outputFile = fopen(optarg, "wb");
                 if (outputFile == NULL) {
                     fprintf(stderr, "Cannot open output file(%s)\n", optarg);
+                    fflush(stderr);
                     exit(1);
                 }
                 dev->output2File(true);
@@ -528,16 +536,19 @@ int main(int argc, char **argv)
     int optindex = optind;
     if (optindex > argc-1) {
         fprintf(stderr, "usage: %s [-v vol] [-d ch[,ch...]] [-o output] EUP-filename\n", argv[0]);
+        fflush(stderr);
         exit(1);
     }
 
     SDL_version compiled;
     SDL_VERSION(&compiled);
     printf("compiled with SDL version %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch);
+    fflush(stdout);
 
     SDL_version linked;
     SDL_GetVersion(&linked);
     printf("linked SDL version %d.%d.%d\n", linked.major, linked.minor, linked.patch);
+    fflush(stdout);
 
     /* Enable standard application logging */
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
@@ -572,6 +583,7 @@ int main(int argc, char **argv)
 /*    if (SDL_OpenAudio(&aRequested,&aGranted) < 0) {*/
     if (SDL_OpenAudio(&aRequested,NULL) < 0) {
         printf("Audio open error!!\n");
+        fflush(stdout);
         exit(1);
     }
 /*    if (aRequested.freq != aGranted.freq) {
@@ -594,6 +606,7 @@ int main(int argc, char **argv)
     u_char *buf = EUPPlayer_readFile(player, dev, nameOfEupFile);
     if (buf == NULL) {
         fprintf(stderr, "%s: read failed\n", argv[1]);
+        fflush(stderr);
         exit(1);
     }
 

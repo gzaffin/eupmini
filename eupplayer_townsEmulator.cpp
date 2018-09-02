@@ -68,6 +68,7 @@ static void dbprintf(char *fmt, ...)
 #define CHECK_CHANNEL_NUM(funcname, channel) \
   if (channel < 0 || _maxChannelNum <= channel) { \
     fprintf(stderr, "%s: channel number %d out of range\n", funcname, channel); \
+    fflush(stderr); \
     return; \
   } \
   (void)false
@@ -704,6 +705,7 @@ void TownsFmEmulator::setControlParameter(int control, int value)
         break;
     default:
         fprintf(stderr, "TownsFmEmulator::setControlParameter: unknown control %d, val=%d\n", control, value);
+        fflush(stderr);
         break;
     };
 }
@@ -716,6 +718,7 @@ void TownsFmEmulator::setInstrumentParameter(u_char const *fmInst,
     if (instrument == NULL) {
         fprintf(stderr, "%s@%p: can not set null instrument\n",
                 "TownsFmEmulator::setInstrumentParameter", this);
+        fflush(stderr);
         return;
     }
 
@@ -889,6 +892,7 @@ void TownsPcmEmulator::setControlParameter(int control, int value)
         break;
     default:
         fprintf(stderr, "TownsFmEmulator::setControlParameter: unknown control %d, val=%d\n", control, value);
+        fflush(stderr);
         break;
     };
 }
@@ -900,10 +904,12 @@ void TownsPcmEmulator::setInstrumentParameter(u_char const *fmInst,
     if (instrument == NULL) {
         fprintf(stderr, "%s@%p: can not set null instrument\n",
                 "TownsPcmEmulator::setInstrumentParameter", this);
+        fflush(stderr);
         return;
     }
     _currentInstrument = (TownsPcmInstrument*)instrument;
     //fprintf(stderr, "0x%08x: program change (to 0x%08x)\n", this, instrument);
+    //fflush(stderr);
 }
 
 void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
@@ -1052,6 +1058,7 @@ void EUP_TownsEmulator_Channel::note(int note, int onVelo, int offVelo, int gate
     _lastNotedDeviceNum = n;
     //fprintf(stderr, "ch=%08x, dev=%d, note=%d, on=%d, off=%d, gate=%d\n",
     // this, n, note, onVelo, offVelo, gateTime);
+    //fflush(stderr);
 }
 
 void EUP_TownsEmulator_Channel::setControlParameter(int control, int value)
@@ -1154,6 +1161,7 @@ void EUP_TownsEmulator::setFmInstrumentParameter(int num, u_char const *instrume
     if (num < 0 || num >= _maxFmInstrumentNum) {
         fprintf(stderr, "%s: FM instrument number %d out of range\n",
                 "EUP_TownsEmulator::setFmInstrumentParameter",  num);
+        fflush(stderr);
         return;
     }
     memcpy(_fmInstrument[num], instrument, 48);
@@ -1210,6 +1218,7 @@ void EUP_TownsEmulator::nextTick()
     int *buf0 = new int[buflen];
     if (NULL == buf0) {
         fprintf(stderr, "heap allocation problem.\n");
+        fflush(stderr);
         exit(0);
     }
 #endif // _MSC_VER
@@ -1217,6 +1226,7 @@ void EUP_TownsEmulator::nextTick()
     int *buf0 = new int[buflen];
     if (NULL == buf0) {
         fprintf(stderr, "heap allocation problem.\n");
+        fflush(stderr);
         exit(0);
     }
 #endif // __MINGW32__
@@ -1237,6 +1247,7 @@ void EUP_TownsEmulator::nextTick()
         u_char *buf1 = new u_char[buflen];
         if (NULL == buf1) {
             fprintf(stderr, "heap allocation problem.\n");
+            fflush(stderr);
             exit(0);
         }
 #endif // _MSC_VER
@@ -1244,6 +1255,7 @@ void EUP_TownsEmulator::nextTick()
         u_char *buf1 = new u_char[buflen];
         if (NULL == buf1) {
             fprintf(stderr, "heap allocation problem.\n");
+            fflush(stderr);
             exit(0);
         }
 #endif // __MINGW32__
@@ -1276,6 +1288,7 @@ void EUP_TownsEmulator::nextTick()
             u_char *buf1 = new u_char[buflen * 2];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
                 exit(0);
             }
 #endif // _MSC_VER
@@ -1283,6 +1296,7 @@ void EUP_TownsEmulator::nextTick()
             u_char *buf1 = new u_char[buflen * 2];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
                 exit(0);
             }
 #endif // __MINGW32__

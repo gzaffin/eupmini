@@ -20,7 +20,7 @@ static void dbprintf(char *fmt, ...)
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
     va_end(args);
-    fflush(stdout);
+    fflush(stderr);
 }
 #define DB1(a) dbprintf(a)
 #define DB2(a,b) dbprintf(a,b)
