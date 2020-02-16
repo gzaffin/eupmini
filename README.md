@@ -1,7 +1,7 @@
 # eupmini
 This is performance music driver EUPHONY (Extension ".Eup") format player using Simple DirectMedia Layer (SDL) version 2.0.x
 
-This project is not started from scratch, in the begining it was coded for GNU/Linux, then Windows o.s. binary version exists made by anonymous K.-Sama, Mr.Sen and others (http://www.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/).
+This project is not started from scratch, in the begining it was coded for GNU/Linux, then Windows o.s. binary version came along made by Mr.anonymous K., Mr.Sen and others (http://www.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/).
 
 EUPHONY format music data was broadly used with past years favourite machine Fujitsu FM TOWNS.
 
@@ -16,7 +16,7 @@ Licence
 GNU General Public License, version 2
 https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
-links:
+# Links:
 
 1. DRMSoundwork ( http://www.boreas.dti.ne.jp/~nudi-drm/ )
 All available EUP and Basic file archive is http://www.boreas.dti.ne.jp/~nudi-drm/sound/townsmml/arcfiles.lzh
@@ -34,67 +34,140 @@ TOWNS EUP 2015 http://rophon.music.coocan.jp/chiptune.htm
 4. MML Compiler HE386 for TownsOS, Windows NT/95/98, Linux
 http://www.runser.jp/softlib.html
 
+5. Vcpkg official GitHub repository
+[GitHub Microsoft vcpkg](https://github.com/Microsoft/vcpkg)
+
+6. Vcpkg documentation
+[vcpkg: A C++ package manager for Windows, Linux and MacOS](https://docs.microsoft.com/en-us/cpp/build/vcpkg?view=vs-2019)
+
+7. Microsoft developer blog
+[Eric Mittelette's blog](https://devblogs.microsoft.com/cppblog/vcpkg-a-tool-to-acquire-and-build-c-open-source-libraries-on-windows/)
+
 # How to build
+
+The following steps build `eupplay` on Ubuntu/Debian/GNU/LINUX o.s. box, or `eupplay.exe` on a MSYS2/MinGW-w64 Windows o.s. box, with provided Makefile, SDL2 and make.
+
+```shell/bash shell
+$ git clone https://github.com/gzaffin/eupmini.git
+$ cd eupmini
+$ make
+```
 
 The following steps build `eupplay` on Ubuntu/Debian/GNU/LINUX o.s. box with SDL2 and cmake.
 
-```
+```GNU/linux bash
 $ git clone https://github.com/gzaffin/eupmini.git
 $ cd eupmini
 $ mkdir build
 $ cd build
-$ cmake -DCMAKE_BUILD_TYPE=Release ..
-$ make -j 4 eupplay
+$ cmake ..
+$ cmake --build . --config Release --target eupplay
 ```
 
 The following steps build `eupplay.exe` on a MSYS2/MinGW-w64 Windows o.s. box with SDL2 and cmake.
 
-```
+```msys2/mingw bash
 $ git clone https://github.com/gzaffin/eupmini.git
 $ cd eupmini
 $ mkdir build
 $ cd build
-$ cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-$ make -j 4 eupplay
+$ cmake -G "MSYS Makefiles" ..
+$ cmake --build . --config Release --target eupplay
 ```
 
-The following steps build `eupplay.exe` on a Windows o.s. box with vcpkg, SDL2 and cmake.
+If MSYS Makefiles generator set with `-G "MSYS Makefiles"` cannot properly set make-utility,
+then add `-DCMAKE_MAKE_PROGRAM=<[PATH]/make-utility>` PATH of make-utility (see [1])
 
-links to reference information pages concerning with how install and use Vcpkg
-1.
-https://blogs.msdn.microsoft.com/vcblog/2016/09/19/vcpkg-a-tool-to-acquire-and-build-c-open-source-libraries-on-windows/
-2.
-https://blogs.msdn.microsoft.com/vcblog/2018/04/24/announcing-a-single-c-library-manager-for-linux-macos-and-windows-vcpkg/
+```windows command-line interface
+$ git clone https://github.com/gzaffin/eupmini.git
+$ cd eupmini
+$ mkdir build
+$ cd build
+$ cmake -G "MSYS Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make ..
+$ cmake --build . --config Release --target eupplay
+```
 
+The following steps build `eupplay.exe` on a Windows o.s. box with MSVC, vcpkg, SDL2 installed with vcpkg.
+
+You can have Your build environment set, on a Windows 10 box, if Your MSVC is Microsoft Visual Studio 2019 Community edition, using Windows 10 taskbar search box writing `x64_x86 Cross Tools Command Prompt for VS 2019` and starting matching App.
+Otherwise, if MSVC is installed in default localtion, if Windows SDK is 10.0.18362.0 (please see what is in 'C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.UniversalCRT.Debug' folder) (see [2]) issuing
+
+```windows command-line interface
+C:\Users\gzaff>"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 10.0.18362.0
 ```
-mkdir build
-cd build
-cmake-gui ..
-Configure
-fill Optional toolset to use (argument to -T) with
-host=x64
-OK
-Add entry
-Add Cache Entry
-Name:
-CMAKE_TOOLCHAIN_FILE
-Type:
-STRING
-Value:
-<PATH>vcpkg/scripts/buildsystems/vcpkg.cmake (see [1])
-Description:
-cmake entry point for vcpkg
-OK
-Double check that SDL2_DIR STRING variable is a path to find SDL2Config.cmake (see [2]), if not the case, fix it
-Configure
-Generate
-Open Project
-On Microsoft Visual Studio Community build solution
+
+Then
+
+```windows command-line interface
+C:\>"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd\git" clone https://github.com/gzaffin/eupmini.git
+C:\>cd eupmini
+C:\eupmini>mkdir build
+C:\eupmini>cd build
+C:\eupmini\build>cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/Users/gzaff/Devs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSDL2_DIR=C:/Users/gzaff/Devs/vcpkg/installed/x64-windows/share/sdl2 ..
+C:\eupmini\build>ninja
 ```
+
+For the case that Visual Studio can be used
+
+```windows command-line interface
+C:\>"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd\git" clone https://github.com/gzaffin/eupmini.git
+C:\>cd eupmini
+C:\eupmini>mkdir build
+C:\eupmini>cd build
+C:\eupmini\build>cmake -G "Visual Studio 16 2019" -Ax64 -Thost=x64 -DCMAKE_TOOLCHAIN_FILE=C:/Users/gzaff/Devs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSDL2_DIR=C:/Users/gzaff/Devs/vcpkg/installed/x64-windows/share/sdl2 ..
+```
+
+For building from command line
+
+```windows command-line interface
+C:\eupmini\build>cmake --build . --config Release --target eupplay
+```
+
+Otherwise start Microsoft Visual Studio and debug pmdmini solution.
+
+You can have Your build environment set, on a Windows 7 box, if Your MSVC is Microsoft Visual Studio 2017 Community edition, using Windows 7 taskbar search box writing `x64_x86 Cross Tools Command Prompt for VS 2017` and starting matching App.
+Otherwise, if MSVC is installed in default localtion, if Windows SDK is 10.0.17763.0 (please see what is in 'C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.UniversalCRT.Debug' folder) (see [2]) issuing
+
+```windows command-line interface
+C:\Users\gzaff>"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 10.0.17763.0
+```
+
+Then
+
+```windows command-line interface
+C:\>"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd\git" clone https://github.com/gzaffin/eupmini.git
+C:\>cd eupmini
+C:\eupmini>mkdir build
+C:\eupmini>cd build
+C:\eupmini\build>cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/Users/gzaff/Devs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSDL2_DIR=C:/Users/gzaff/Devs/vcpkg/installed/x64-windows/share/sdl2 ..
+C:\pmdmini\build>ninja
+```
+
+For the case that Visual Studio can be used
+
+```windows command-line interface
+C:\>"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd\git" clone https://github.com/gzaffin/eupmini.git
+C:\>cd eupmini
+C:\eupmini>mkdir build
+C:\eupmini>cd build
+C:\eupmini\build>cmake -G "Visual Studio 15 2017 Win64" -Thost=x64 -DCMAKE_TOOLCHAIN_FILE=C:/Users/gzaff/Devs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSDL2_DIR=C:/Users/gzaff/Devs/vcpkg/installed/x64-windows/share/sdl2 ..
+```
+
+For building from command line
+
+```windows command-line interface
+C:\eupmini\build>cmake --build . --config Release --target eupplay
+```
+
+Otherwise start Microsoft Visual Studio and debug pmdmini solution.
+
+Recap of required MACRO definitions:
+
+`CMAKE_TOOLCHAIN_FILE`: full PATH of vcpkg.cmake
+`SDL2_DIR`: PATH to find SDL2Config.cmake
 
 [1]
-it is absolute or relative path to vcpkg's vcpkg.cmake e.g. C:/tempGZ/vcpkg/scripts/buildsystems/vcpkg.cmake
+it is make-utility name e.g. `mingw32-make` with specified PATH if make is not within search PATH as it should be
 
 [2]
-it is absolute or relative path to vcpkg's SDL2Config.cmake e.g. C:/tempGZ/vcpkg/installed/x64-windows/share/sdl2
-
+calling vcvarsall.bat update PATH variable, so "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake" and "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja" can be called as cmake and ninja respectively
