@@ -121,7 +121,7 @@ int getopt(int argc, char ** argv, const char * opts)
 #define PATH_DELIMITER_CHAR ':'
 #endif // __GNUC__
 #if defined ( _MSC_VER )
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
 #include <SDL2/SDL.h>

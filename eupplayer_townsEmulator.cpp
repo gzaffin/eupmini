@@ -15,7 +15,7 @@
 #include <_bsd_types.h>
 #endif
 #if defined ( _MSC_VER )
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
 #include <SDL2/SDL.h>
