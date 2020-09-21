@@ -153,7 +153,7 @@ http://www.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/
 2. [DRMSoundwork](http://www.boreas.dti.ne.jp/~nudi-drm/)
 [All available EUP and Basic file archive](http://www.boreas.dti.ne.jp/~nudi-drm/sound/townsmml/arcfiles.lzh)
 
-3. [Freescale 6 to 11 directory of FM-TOWNS MUSIC Performance files](http://mdxoarchive.webcrow.jp/)
+3. [Free Software Collection 6 to 11 directory of FM-TOWNS MUSIC Performance files](http://mdxoarchive.webcrow.jp/)
 http://mdxoarchive.webcrow.jp/EUP/FCEUP.part01.rar
 http://mdxoarchive.webcrow.jp/EUP/FCEUP.part02.rar
 http://mdxoarchive.webcrow.jp/EUP/FCEUP.part03.rar
