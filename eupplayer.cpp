@@ -206,7 +206,7 @@ int EUPPlayer_cmd_f5(int cmd, EUPPlayer *pl)
 
 int EUPPlayer_cmd_f6(int cmd, EUPPlayer *pl)
 {
-    /* ̤��� */
+    /* 未定義 */
     DB_PROCESSING("Undefined");
     return EUPPlayer_cmd_INVALID(cmd, pl);
 }
