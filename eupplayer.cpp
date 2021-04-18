@@ -284,6 +284,20 @@ int EUPPlayer_cmd_ff(int cmd, EUPPlayer *pl)
     return 0;
 }
 
+typedef int (*CommandProc)(int, EUPPlayer *);
+
+static CommandProc const _fCommands[0x10] = {
+    EUPPlayer_cmd_f0, EUPPlayer_cmd_f1, EUPPlayer_cmd_f2, EUPPlayer_cmd_f3,
+    EUPPlayer_cmd_f4, EUPPlayer_cmd_f5, EUPPlayer_cmd_f6, EUPPlayer_cmd_f7,
+    EUPPlayer_cmd_f8, EUPPlayer_cmd_f9, EUPPlayer_cmd_fa, EUPPlayer_cmd_fb,
+    EUPPlayer_cmd_fc, EUPPlayer_cmd_fd, EUPPlayer_cmd_fe, EUPPlayer_cmd_ff,
+};
+
+int EUPPlayer_cmd_fx(int cmd, EUPPlayer *pl)
+{
+    return (_fCommands[cmd & 0x0f])(cmd, pl);
+}
+
 /* EUPPlayer */
 
 EUPPlayer::EUPPlayer()
@@ -346,29 +360,10 @@ bool EUPPlayer::isPlaying() const
     return (_isPlaying) ? true : false;
 }
 
-typedef int (*CommandProc)(int, EUPPlayer *);
-
 static CommandProc const _commands[0x08] = {
   EUPPlayer_cmd_8x, EUPPlayer_cmd_9x, EUPPlayer_cmd_ax, EUPPlayer_cmd_bx,
-  EUPPlayer_cmd_cx, EUPPlayer_cmd_dx, EUPPlayer_cmd_ex, EUPPlayer_cmd_fx,	
+  EUPPlayer_cmd_cx, EUPPlayer_cmd_dx, EUPPlayer_cmd_ex, EUPPlayer_cmd_fx,
 };
-
-static CommandProc const _fCommands[0x10] = {
-    EUPPlayer_cmd_f0, EUPPlayer_cmd_f1, EUPPlayer_cmd_f2, EUPPlayer_cmd_f3,
-    EUPPlayer_cmd_f4, EUPPlayer_cmd_f5, EUPPlayer_cmd_f6, EUPPlayer_cmd_f7,
-    EUPPlayer_cmd_f8, EUPPlayer_cmd_f9, EUPPlayer_cmd_fa, EUPPlayer_cmd_fb,
-    EUPPlayer_cmd_fc, EUPPlayer_cmd_fd, EUPPlayer_cmd_fe, EUPPlayer_cmd_ff,
-};
-
-int EUPPlayer_cmd_fx(int cmd, EUPPlayer *pl)
-{
-    return (_fCommands[cmd & 0x0f])(cmd, pl);
-}
-
-//static CommandProc const _commands[0x08] = {
-//    EUPPlayer_cmd_8x, EUPPlayer_cmd_9x, EUPPlayer_cmd_ax, EUPPlayer_cmd_bx,
-//    EUPPlayer_cmd_cx, EUPPlayer_cmd_dx, EUPPlayer_cmd_ex, EUPPlayer_cmd_fx,
-//};
 
 int EUPPlayer_cmd_INVALID(int cmd, EUPPlayer *pl)
 {
