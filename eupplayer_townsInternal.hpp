@@ -1,3 +1,5 @@
+// $Id: eupplayer_townsInternal.h,v 1.2 1996/08/20 16:33:41 tjh Exp $
+
 /*      Artistic Style
  *
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer_townsInternal.hpp

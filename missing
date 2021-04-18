@@ -88,7 +88,7 @@ WARNING: \`$1' is missing on your system.  You should only need it if
     for f in $files; do
       case "$f" in
       *:*) touch_files="$touch_files "`echo "$f" |
-				       sed -e 's/^[^:]*://' -e 's/:.*//'`;;
+                                       sed -e 's/^[^:]*://' -e 's/:.*//'`;;
       *) touch_files="$touch_files $f.in";;
       esac
     done
@@ -102,8 +102,8 @@ WARNING: \`$1' is missing on your system.  You should only need it if
          You might want to install the \`Automake' and \`Perl' packages.
          Grab them from any GNU archive site."
     find . -type f -name Makefile.am -print |
-	   sed 's/\.am$/.in/' |
-	   while read f; do touch "$f"; done
+           sed 's/\.am$/.in/' |
+           while read f; do touch "$f"; done
     ;;
 
   bison|yacc)
@@ -115,24 +115,24 @@ WARNING: \`$1' is missing on your system.  You should only need it if
     rm -f y.tab.c y.tab.h
     if [ $# -ne 1 ]; then
         eval LASTARG="\${$#}"
-	case "$LASTARG" in
-	*.y)
-	    SRCFILE=`echo "$LASTARG" | sed 's/y$/c/'`
-	    if [ -f "$SRCFILE" ]; then
-	         cp "$SRCFILE" y.tab.c
-	    fi
-	    SRCFILE=`echo "$LASTARG" | sed 's/y$/h/'`
-	    if [ -f "$SRCFILE" ]; then
-	         cp "$SRCFILE" y.tab.h
-	    fi
-	  ;;
-	esac
+        case "$LASTARG" in
+        *.y)
+            SRCFILE=`echo "$LASTARG" | sed 's/y$/c/'`
+            if [ -f "$SRCFILE" ]; then
+                 cp "$SRCFILE" y.tab.c
+            fi
+            SRCFILE=`echo "$LASTARG" | sed 's/y$/h/'`
+            if [ -f "$SRCFILE" ]; then
+                 cp "$SRCFILE" y.tab.h
+            fi
+          ;;
+        esac
     fi
     if [ ! -f y.tab.h ]; then
-	echo >y.tab.h
+        echo >y.tab.h
     fi
     if [ ! -f y.tab.c ]; then
-	echo 'main() { return 0; }' >y.tab.c
+        echo 'main() { return 0; }' >y.tab.c
     fi
     ;;
 
@@ -145,17 +145,17 @@ WARNING: \`$1' is missing on your system.  You should only need it if
     rm -f lex.yy.c
     if [ $# -ne 1 ]; then
         eval LASTARG="\${$#}"
-	case "$LASTARG" in
-	*.l)
-	    SRCFILE=`echo "$LASTARG" | sed 's/l$/c/'`
-	    if [ -f "$SRCFILE" ]; then
-	         cp "$SRCFILE" lex.yy.c
-	    fi
-	  ;;
-	esac
+        case "$LASTARG" in
+        *.l)
+            SRCFILE=`echo "$LASTARG" | sed 's/l$/c/'`
+            if [ -f "$SRCFILE" ]; then
+                 cp "$SRCFILE" lex.yy.c
+            fi
+          ;;
+        esac
     fi
     if [ ! -f lex.yy.c ]; then
-	echo 'main() { return 0; }' >lex.yy.c
+        echo 'main() { return 0; }' >lex.yy.c
     fi
     ;;
 

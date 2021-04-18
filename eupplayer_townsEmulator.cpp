@@ -1,3 +1,5 @@
+// $Id: eupplayer_townsEmulator.cc,v 1.24 2000/04/12 23:14:35 hayasaka Exp $
+
 /*      Artistic Style
  *
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer_townsEmulator.cpp
@@ -311,7 +313,7 @@ int TownsPcmEnvelope::nextTick()
 #endif
         break;
     default:
-        // �����ˤ���ʤ��Ϥ�
+        // ここには来ないはず
         break;
     };
 
@@ -367,7 +369,7 @@ void TownsPcmInstrument::registerSound(TownsPcmSound const *sound)
 
 TownsPcmSound const *TownsPcmInstrument::findSound(int note) const
 {
-    // ���ʤ��Ȥ�ɤ줫�� split ������Ǥ���褦�ˤ��Ƥ�����
+    // 少なくともどれかの split を選択できるようにしておこう
     int splitNum;
     for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++)
         if (note <= _split[splitNum]) {
@@ -378,7 +380,7 @@ TownsPcmSound const *TownsPcmInstrument::findSound(int note) const
 
 TownsPcmEnvelope const *TownsPcmInstrument::findEnvelope(int note) const
 {
-    // ���ʤ��Ȥ�ɤ줫�� split ������Ǥ���褦�ˤ��Ƥ�����
+    // 少なくともどれかの split を選択できるようにしておこう
     int splitNum;
     for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++)
         if (note <= _split[splitNum]) {
@@ -436,7 +438,7 @@ void TownsFmEmulator_Operator::setInstrumentParameter(u_char const *instrument)
     _specifiedSustainRate = instrument[24] & 31;
     _specifiedSustainLevel = (instrument[28] >> 4) & 15;
     _specifiedReleaseRate = instrument[28] & 15;
-    _state = _s_ready; // ��ʪ�ǤϤɤ��ʤΤ���?
+    _state = _s_ready; // 本物ではどうなのかな?
     this->velocity(_velocity);
 }
 
@@ -444,8 +446,8 @@ void TownsFmEmulator_Operator::keyOn()
 {
     _state = _s_attacking;
     _tickCount = 0;
-    _phase = 0;           // �ɤ��⡢�ºݤ����餷��
-    _currentLevel = ((int64_t)0x7f << 31); // ����⡢�ºݤ����餷��
+    _phase = 0; // どうも、実際こうらしい
+    _currentLevel = ((int64_t)0x7f << 31); // これも、実際こうらしい
 }
 
 void TownsFmEmulator_Operator::keyOff()
@@ -466,7 +468,7 @@ void TownsFmEmulator_Operator::frequency(int freq)
     if (r != 0) {
         r = r * 2 + (keyscaleTable[freq/262205] >> (3-_keyScale));
         if (r >= 64) {
-            r = 63;    // ����٤��ʤ�����Ȥϻפ�������� (��p.207)
+            r = 63; // するべきなんだろうとは思うんだけど (赤p.207)
         }
     }
 #if 0
@@ -474,8 +476,8 @@ void TownsFmEmulator_Operator::frequency(int freq)
     _attackRate *= powtbl[(r&3) << 7];
     _attackRate <<= 16 + (r >> 2);
     _attackRate >>= 1;
-    _attackRate /= 9;  // r == 4 �ΤȤ���0-96db �� 8970.24ms
-    //_attackRate /= 4;  // r == 4 �ΤȤ���0-96db �� 8970.24ms
+    _attackRate /= 9; // r == 4 のとき、0-96db が 8970.24ms
+    //_attackRate /= 4; // r == 4 のとき、0-96db が 8970.24ms
     //DB(("AR=%d->%d, 0-96[db]=%d[ms]\n", _specifiedAttackRate, r, (((int64_t)0x80<<31) * 1000) / _attackRate));
 #else
     {
@@ -487,12 +489,12 @@ void TownsFmEmulator_Operator::frequency(int freq)
         else {
             t = powtbl[(r&3) << 7];
             t <<= (r >> 2);
-            t *= 41;          // r == 20 �ΤȤ���0-96[db] �� 10.01[ms] == 41.00096
+            t *= 41; // r == 4 のとき、0-96db が 8970.24ms
             t >>= (15 + 5);
             t *= 127 - _specifiedTotalLevel;
             t /= 127;
         }
-        _attackTime = t;        // 1 �� == (1 << 12)
+        _attackTime = t; // 1 秒 == (1 << 12)
         //DB(("AR=%d->%d, 0-96[db]=%d[ms]\n", _specifiedAttackRate, r, (int)((t*1000)>>12)));
     }
 #endif
@@ -509,7 +511,7 @@ void TownsFmEmulator_Operator::frequency(int freq)
     _decayRate *= powtbl[(r&3) << 7];
     _decayRate <<= 16 + (r >> 2);
     _decayRate >>= 1;
-    _decayRate /= 124;    // r == 4 �ΤȤ���0-96db �� 123985.92ms
+    _decayRate /= 124; // r == 4 のとき、0-96db が 123985.92ms
 
     r = _specifiedSustainRate;
     if (r != 0) {
@@ -527,9 +529,9 @@ void TownsFmEmulator_Operator::frequency(int freq)
 
     r = _specifiedReleaseRate;
     if (r != 0) {
-        r = r * 2 + 1;      // ���Υ����ߥ󥰤��ɤ��Τ��狼���
+        r = r * 2 + 1; // このタイミングで良いのかわからん
         r = r * 2 + (keyscaleTable[freq/262205] >> (3-_keyScale));
-        // KS �ˤ�������Ϥ���餷������p.206 �Ǥϵ��Ҥ���Ƥʤ����ɡ�
+        // KS による補正はあるらしい。赤p.206 では記述されてないけど。
         if (r >= 64) {
             r = 63;
         }
@@ -544,7 +546,7 @@ void TownsFmEmulator_Operator::frequency(int freq)
 
 int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
 {
-    // sampling �ҤȤ�ʬ�ʤ��
+    // sampling ひとつ分進める
 
     if (_oldState != _state) {
         //DB(("state %d -> %d\n", _oldState, _state));
@@ -607,7 +609,7 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
 #endif
         break;
     default:
-        // �����ˤ���ʤ��Ϥ�
+        // ここには来ないはず
         break;
     };
 
@@ -626,10 +628,10 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
         };
 
         _phase &= 0x3ffff;
-        phaseShift >>= 2;       // ��������Ĵ�̤�?  3 ���㾮�������� 2 �����礭���褦�ʡ�
-        phaseShift += (((int64_t)(_lastOutput) * feedback[_feedbackLevel]) >> 16); // ��������Ĵ�̤�?  16����17�δ֤Τ褦�����ɡ�
+        phaseShift >>= 2; // 正しい変調量は?  3 じゃ小さすぎで 2 じゃ大きいような。
+        phaseShift += (((int64_t)(_lastOutput) * feedback[_feedbackLevel]) >> 16); // 正しい変調量は?  16から17の間のようだけど。
         output = sintbl[((_phase >> 7) + phaseShift) & 0x7ff];
-        output >>= (level >> 34);   // �����������̤�?
+        output >>= (level >> 34); // 正しい減衰量は?
         output *= powtbl[511 - ((level>>25)&511)];
         output >>= 16;
         output >>= 1;
@@ -670,7 +672,7 @@ void TownsFmEmulator::velocity(int velo)
 {
     EUP_TownsEmulator_MonophonicAudioSynthesizer::velocity(velo);
 #if 0
-    int v = (velo * _control7) >> 7; // ������������ɤ��ʤ��Ǥ���
+    int v = (velo * _control7) >> 7; // これだと精度良くないですね
 #else
     int v = velo + (_control7 - 127) * 4;
 #endif
@@ -735,7 +737,7 @@ void TownsFmEmulator::setInstrumentParameter(u_char const *fmInst,
 
 void TownsFmEmulator::nextTick(int *outbuf, int buflen)
 {
-    // steptime �ҤȤ�ʬ�ʤ��
+    // steptime ひとつ分進める
 
     if (_gateTime > 0) {
         if (--_gateTime <= 0) {
@@ -838,13 +840,13 @@ void TownsFmEmulator::pitchBend(int value)
 
 void TownsFmEmulator::recalculateFrequency()
 {
-    // MIDI �Ȥ�㤦��....
-    // �ɤ��������ͤʤ������?
-    // �Ȼפä��顢�ʤ�ȡ����� (��) ������餷����
+    // MIDI とも違うし....
+    // どういう仕様なんだろうか?
+    // と思ったら、なんと、これ (↓) が正解らしい。
     int64_t basefreq = frequencyTable[_note];
     int cfreq = frequencyTable[_note - (_note % 12)];
     int oct = _note / 12;
-    int fnum = (basefreq << 13) / cfreq; // OPL �� fnum ��Ʊ���褦�ʤ�Ρ�
+    int fnum = (basefreq << 13) / cfreq; // OPL の fnum と同じようなもの。
     fnum += _frequencyOffs - 0x2000;
     if (fnum < 0x2000) {
         fnum += 0x2000;
@@ -855,7 +857,7 @@ void TownsFmEmulator::recalculateFrequency()
         oct++;
     }
 
-    // _frequency �Ϻǽ�Ū�˥Х����� 256*1024 ��
+    // _frequency は最終的にバイアス 256*1024 倍
     _frequency = (frequencyTable[oct*12] * (int64_t)fnum) >> (13 - 10);
 
     for (int i = 0; i < _numOfOperators; i++) {
@@ -914,7 +916,7 @@ void TownsPcmEmulator::setInstrumentParameter(u_char const *fmInst,
 
 void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
 {
-    // steptime �ҤȤ�ʬ�ʤ��
+    // steptime ひとつ分進める
 
     if (_currentEnvelope == NULL) {
         return;
@@ -942,8 +944,8 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         ps >>= 16;
         phaseStep = ps;
     }
-    int loopLength = _currentSound->loopLength() << 16; // ���餫����׻�����
-    int numSamples = _currentSound->numSamples() << 16; // �����Τϴ�����
+    int loopLength = _currentSound->loopLength() << 16; // あらかじめ計算して
+    int numSamples = _currentSound->numSamples() << 16; // おくのは危険だぞ
     signed char const *soundSamples = _currentSound->samples();
     for (int i = 0; i < buflen; i++) {
         if (loopLength > 0)
@@ -955,14 +957,14 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
             this->velocity(0);
             delete _currentEnvelope;
             _currentEnvelope = NULL;
-            // ��Ȥδط��⤢�뤷��äȤ�����ˡ�����ꤽ��
+            // 上との関係もあるしもっといい方法がありそう
             break;
         }
 
 #if 0
         int output = soundSamples[_phase>>16];
 #else
-        // ������֤��롣
+        // 線型補間する。
         int output;
         {
             int phase0 = _phase;
@@ -980,14 +982,14 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
             output >>= 16;
         }
 #endif
-        output *= this->velocity(); // �������ʤ������Τ�ʤ����ɡ�FM �Ȱ㤦��Ǥ���
+        output *= this->velocity(); // 信じられないかも知れないけど、FM と違うんです。
         output <<= 1;
         output *= _currentEnvelope->nextTick();
         output >>= 7;
-        output *= _control7;    // �����������̤�?
+        output *= _control7; // 正しい減衰量は?
         output >>= 7;
-        // FM �Ȥβ��̥Х�󥹤��롣
-        output *= 185; // ���餤?  Ⱦü�Ǥ��ͤ���
+        // FM との音量バランスを取る。
+        output *= 185; // くらい?  半端ですねぇ。
         output >>= 8;
         outbuf[i] += output;
         _phase += phaseStep;
@@ -1063,7 +1065,7 @@ void EUP_TownsEmulator_Channel::note(int note, int onVelo, int offVelo, int gate
 
 void EUP_TownsEmulator_Channel::setControlParameter(int control, int value)
 {
-    // �����Τ������?
+    // いいのかこれで?
     for (int n = 0; _dev[n] != NULL; n++) {
         _dev[n]->setControlParameter(control, value);
     }
@@ -1079,7 +1081,7 @@ void EUP_TownsEmulator_Channel::setInstrumentParameter(u_char const *fmInst,
 
 void EUP_TownsEmulator_Channel::pitchBend(int value)
 {
-    // �����Τ������?
+    // いいのかこれで?
     for (int n = 0; _dev[n] != NULL; n++) {
         _dev[n]->pitchBend(value);
     }
@@ -1207,12 +1209,12 @@ void EUP_TownsEmulator::enable(int ch, bool en)
 
 void EUP_TownsEmulator::nextTick()
 {
-    // steptime �ҤȤ�ʬ�ʤ��
+    // steptime ひとつ分進める
 
     struct timeval tv = this->timeStep();
-    int64_t buflen = (int64_t)_rate * (int64_t)tv.tv_usec; /* ���پ夲�ʤ���  */
+    int64_t buflen = (int64_t)_rate * (int64_t)tv.tv_usec; /* 精度上げなきゃ  */
     //buflen /= 1000 * 1000;
-    buflen /= 1000ll * 1012ll; // 1010 ���� 1015 ���餤�Ǥ��͡������Ǥϡ��ʤˤ�뤱�ɡ�
+    buflen /= 1000 * 1012; // 1010 から 1015 くらいですね、うちでは。曲によるけど。
     buflen++;
 #if defined ( _MSC_VER )
     int *buf0 = new int[buflen];
@@ -1266,8 +1268,8 @@ void EUP_TownsEmulator::nextTick()
     for (int i = 0; i < buflen; i++) {
         int d = buf0[i];
         d *= this->volume();
-        d >>= 10; // ������������ʤ�
-        d ^= _outputSampleUnsigned?0x8000:0;
+        d >>= 10; // いいかげんだなぁ
+        d ^= (_outputSampleUnsigned) ? 0x8000 : 0;
         buf1[i] = ((d >> 8) & 0xff);
     }
     if (true == this->output2File_read()) {
@@ -1307,8 +1309,8 @@ void EUP_TownsEmulator::nextTick()
             for (int i = 0; i < buflen; i++) {
                 int d = buf0[i];
                 d *= this->volume();
-                d >>= 10; // ������������ʤ�
-                d ^= _outputSampleUnsigned?0x8000:0;
+                d >>= 10; // いいかげんだなぁ
+                d ^= (_outputSampleUnsigned) ? 0x8000 : 0;
                 if (_outputSampleLSBFirst) {
                     buf1[i*2+1] = ((d >> 8) & 0xff);
                     buf1[i*2+0] = ((d >> 0) & 0xff);
@@ -1336,7 +1338,7 @@ void EUP_TownsEmulator::nextTick()
                     ||
                     ((pcm.read_pos >= pcm.write_pos) && (buflen <= (pcm.read_pos - pcm.write_pos)))) {
                     int renderData = pcm.write_pos;
-		    int16_t * renderBuffer =(int16_t *) pcm.buffer; 
+                    int16_t * renderBuffer =(int16_t *) pcm.buffer; 
 
                     if (true == _outputSampleLSBFirst) {
                         for (int i = 0; i < buflen; i++) {
@@ -1346,7 +1348,7 @@ void EUP_TownsEmulator::nextTick()
 
                             int d = buf0[i];
                             d *= this->volume();
-                            int16_t dd = (int16_t)(d >> 10); // ������������ʤ�
+                            int16_t dd = (int16_t)(d >> 10); // いいかげんだなぁ
                             renderBuffer[renderData++] = dd;
 
                             /* left channel sample first place */

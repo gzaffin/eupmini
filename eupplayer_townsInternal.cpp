@@ -1,3 +1,5 @@
+// $Id: eupplayer_townsInternal.cc,v 1.2 1996/08/20 16:33:38 tjh Exp $
+
 /*      Artistic Style
  *
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer_townsInternal.cpp
@@ -228,7 +230,7 @@ void EUP_TownsInternal::pitchBend(int track, int value)
 
 void EUP_TownsInternal::programChange(int track, int num)
 {
-    /* track -> channel ���Ѵ��򤷤ʤ���  */
+    /* track -> channel の変換をしなきゃ  */
     int channel = track;
     _dev[channel]->setInstrumentParameter(_fmInstrument[num]);
 }

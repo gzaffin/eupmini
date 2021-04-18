@@ -147,18 +147,21 @@ calling vcvarsall.bat update PATH variable, so "C:\Program Files (x86)\Microsoft
 
 # Links:
 
-1. Lost and Found project
-http://www.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/
+1. Lost and Found projects
+[EUPPlayer for Windows O.S.](http://heisei.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/)
+[BEFiS Webpage Download page](http://www.purose.net/befis/download/)
+[BEFiS Webpage Download direct link to eupplay](http://www.purose.net/befis/download/lib/eupplay.lzh)
+[EUP player for MSW  ver.0.08f Programmed by 仙](http://www.ym2149.com/fmtowns_eup.zip)
 
 2. [DRMSoundwork](http://www.boreas.dti.ne.jp/~nudi-drm/)
 [All available EUP and Basic file archive](http://www.boreas.dti.ne.jp/~nudi-drm/sound/townsmml/arcfiles.lzh)
 
 3. [Freescale 6 to 11 directory of FM-TOWNS MUSIC Performance files](http://mdxoarchive.webcrow.jp/)
-http://mdxoarchive.webcrow.jp/EUP/FCEUP.part01.rar
-http://mdxoarchive.webcrow.jp/EUP/FCEUP.part02.rar
-http://mdxoarchive.webcrow.jp/EUP/FCEUP.part03.rar
-http://mdxoarchive.webcrow.jp/EUP/FCEUP.part04.rar
-http://mdxoarchive.webcrow.jp/EUP/FCEUP.part05.rar
+[http://mdxoarchive.webcrow.jp/EUP/FCEUP.part01.rar](http://mdxoarchive.webcrow.jp/EUP/FCEUP.part01.rar)
+[http://mdxoarchive.webcrow.jp/EUP/FCEUP.part02.rar](http://mdxoarchive.webcrow.jp/EUP/FCEUP.part02.rar)
+[http://mdxoarchive.webcrow.jp/EUP/FCEUP.part03.rar](http://mdxoarchive.webcrow.jp/EUP/FCEUP.part03.rar)
+[http://mdxoarchive.webcrow.jp/EUP/FCEUP.part04.rar](http://mdxoarchive.webcrow.jp/EUP/FCEUP.part04.rar)
+[http://mdxoarchive.webcrow.jp/EUP/FCEUP.part05.rar](http://mdxoarchive.webcrow.jp/EUP/FCEUP.part05.rar)
 
 4. [chiptune create ROPCHIPTUNE LABORATORY 3.00](http://rophon.music.coocan.jp/chiptune.htm)
 [TOWNS EUP 2015](http://rophon.music.coocan.jp/chiptune.htm)

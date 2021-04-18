@@ -1,3 +1,5 @@
+// $Id: eupplayer_townsEmulator.h,v 1.13 2000/04/12 23:12:51 hayasaka Exp $
+
 /*      Artistic Style
  *
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer_townsEmulator.hpp

@@ -12,6 +12,8 @@
  *
  */
 
+// $Id: eupplay.cc,v 1.15 2000/04/12 23:20:56 hayasaka Exp $
+
 /*      Artistic Style
  *
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplay.cpp
@@ -157,12 +159,12 @@ static void audio_callback(void *param, Uint8 *data, int len)
         if (streamAudioBufferSamples <= readData2Buffer) {
             readData2Buffer = 0;
         }
-	audio_buffer[i] = source_buffer[readData2Buffer++];
+        audio_buffer[i] = source_buffer[readData2Buffer++];
     }
 
     if (len) {
         pcm.count += i;
-	pcm.read_pos = readData2Buffer;
+        pcm.read_pos = readData2Buffer;
     }
 }
 
@@ -223,7 +225,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
                            TownsAudioDevice *device,
                            string const &nameOfEupFile)
 {
-    // ?��Ȥꤢ?��?��?��?��, TOWNS emu ?��Τߤ?��?��б?��.
+    // とりあえず, TOWNS emu のみに対応.
 
     u_char *eupbuf = NULL;
     player->stopPlaying();
@@ -255,7 +257,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
     }
 
     player->tempo(eupbuf[2048 + 5] + 30);
-    // ?��?��?��?��ƥ?��ݤ?��?��?��?��?��ΤĤ?��?��.  ?��?��?��?��?��?��?��?��?��?��?��?
+    // 初期テンポの設定のつもり.  これで正しい?
 
     for (int n = 0; n < 32; n++) {
         player->mapTrack_toChannel(n, eupbuf[0x394 + n]);
@@ -268,22 +270,36 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
         device->assignPcmDeviceToChannel(eupbuf[0x6da + n]);
     }
 
-    string fmbPath("." PATH_DELIMITER "C:\\tempGZ\\eupmini-Windows\\fmb\\");
-    string pmbPath("." PATH_DELIMITER "C:\\tempGZ\\eupmini-Windows\\pmb\\");
+    char nameBuf[1024];
+#ifdef _MSC_VER
+    char *fmppmbdir = std::getenv("USERPROFILE");
+#else
+    char *fmppmbdir = std::getenv("HOME");
+#endif
+    if (nullptr != fmppmbdir)
     {
-        char *s;
-        s = getenv("EUP_FMINST");
-        if (s != NULL) {
-            fmbPath = string(s);
-        }
-        s = getenv("EUP_PCMINST");
-        if (s != NULL) {
-            pmbPath = string(s);
-        }
-        string eupDir = nameOfEupFile.substr(0, nameOfEupFile.rfind("/") + 1) + ".";
-        fmbPath = eupDir + PATH_DELIMITER + fmbPath;
-        pmbPath = eupDir + PATH_DELIMITER + pmbPath;
+        std::strcpy(nameBuf, fmppmbdir);
+#ifdef _MSC_VER
+        std::strcat(nameBuf, "\\.eupplay\\fmb\\");
+#else
+        std::strcat(nameBuf,"/.eupplay/fmb/");
+#endif
     }
+    else
+    {
+        nameBuf[0] = 0;
+    }
+    string fmbPath(nameBuf); // 'fmb'
+    std::size_t nameBufLength = std::strlen(nameBuf);
+    nameBuf[nameBufLength - 4] = 'p';
+    string pmbPath(nameBuf); // 'pmb'
+#ifdef _MSC_VER
+    string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("\\") + 1) + ".\\");
+#else
+    string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("/") + 1) + "./");
+#endif
+    fmbPath = eupDir + PATH_DELIMITER + fmbPath;
+    pmbPath = eupDir + PATH_DELIMITER + pmbPath;
 
     {
 #if 0

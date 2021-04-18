@@ -1,3 +1,5 @@
+// $Id: eupplayer.h,v 1.4 2000/04/12 23:16:26 hayasaka Exp $
+
 /*      Artistic Style
  *
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer.hpp
