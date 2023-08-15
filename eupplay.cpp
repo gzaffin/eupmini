@@ -19,19 +19,30 @@
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplay.cpp
  */
 
-using namespace std;
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
+#include <csignal>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <strstream>
+#include <cerrno>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstring>
 #include <vector>
 #include <strstream>
+
 #if defined ( _MSC_VER )
 #ifndef _WINGETOPT_H_
 #define _WINGETOPT_H_
+
+#ifdef _MSC_VER
+// following SDL_MAIN_HANDLED macro is managed with CMake
+//#define SDL_MAIN_HANDLED
+#include <SDL.h>
+#else
+#include <SDL.h>
+#endif
 
 #define GETOPT_EOF (-1)
 #define GETOPT_ERR(s, c) if (opterr) { \
@@ -100,7 +111,7 @@ int getopt(int argc, char ** argv, const char * opts)
     return(c);
 }
 
-#endif  /* _GETOPT_H_ */
+#endif  /* _WINGETOPT_H_ */
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
 #include <unistd.h> /* is it for declaring int getopt(int, char * const [], const char *) ? */
@@ -133,7 +144,6 @@ int getopt(int argc, char ** argv, const char * opts)
 #endif // __GNUC__
 #include "eupplayer.hpp"
 #include "eupplayer_townsEmulator.hpp"
-
 
 /*
  * global data
@@ -168,142 +178,250 @@ static void audio_callback(void *param, Uint8 *data, int len)
     }
 }
 
-static string const downcase(string const &s)
+static std::string const downcase(std::string const &s)
 {
-    string r;
-    for (string::const_iterator i = s.begin(); i != s.end(); i++) {
+    std::string r;
+    for (std::string::const_iterator i = s.begin(); i != s.end(); i++) {
         r += (*i >= 'A' && *i <= 'Z') ? (*i - 'A' + 'a') : *i;
     }
     return r;
 }
 
-static string const upcase(string const &s)
+static std::string const upcase(std::string const &s)
 {
-    string r;
-    for (string::const_iterator i = s.begin(); i != s.end(); i++) {
+    std::string r;
+    for (std::string::const_iterator i = s.begin(); i != s.end(); i++) {
         r += (*i >= 'a' && *i <= 'z') ? (*i - 'a' + 'A') : *i;
     }
     return r;
 }
 
-static FILE *openFile_inPath(string const &filename, string const &path)
+static FILE *openFile_inPath(std::string const &filename, std::string const &path)
 {
     FILE *f = NULL;
-    vector<string> fn2;
+    std::vector<std::string> fn2;
     fn2.push_back(filename);
     fn2.push_back(downcase(filename));
     fn2.push_back(upcase(filename));
 
-    string::const_iterator i = path.begin();
+    std::string::const_iterator i = path.begin();
     while (i != path.end()) {
-        string dir;
+        std::string dir{};
         while (i != path.end() && *i != PATH_DELIMITER_CHAR) {
             dir += *i++;
         }
         if (i != path.end() && *i == PATH_DELIMITER_CHAR) {
             i++;
         }
-        for (vector<string>::const_iterator j = fn2.begin(); j != fn2.end(); j++) {
-            string const filename(dir + "/" + *j);
-            //cerr << "trying " << filename << endl;
+        for (std::vector<std::string>::const_iterator j = fn2.begin(); j != fn2.end(); j++) {
+#ifdef _MSC_VER
+            std::string const filename(dir /*+ "\\"*/ + *j);
+#else
+            std::string const filename(dir /*+ "/"*/ +*j);
+#endif
+            std::cerr << "trying " << filename << std::endl;
             f = fopen(filename.c_str(), "rb");
             if (f != NULL) {
-                //cerr << "loading " << filename << endl;
+                std::cerr << "loading " << filename << std::endl;
                 return f;
             }
         }
     }
     if (f == NULL) {
         fprintf(stderr, "error finding %s\n", filename.c_str());
-        fflush(stderr);
+        std::fflush(stderr);
     }
 
     return f;
 }
 
-u_char *EUPPlayer_readFile(EUPPlayer *player,
-                           TownsAudioDevice *device,
-                           string const &nameOfEupFile)
+uint8_t *EUPPlayer_readFile(EUPPlayer *player,
+        TownsAudioDevice *device,
+        std::string const &nameOfEupFile)
 {
+    // EUPﾌｧｲﾙﾍｯﾀﾞ構造体
+    typedef struct {
+        char    title[32]; // オフセット/offset 000h タイトルは半角32文字，全角で16文字以内の文字列で指定します。The title is specified as a character string of 32 half-width characters or less and 16 full-width characters or less.
+        char    short_title[12]; // オフセット/offset 020h
+        char    dummy[40]; // オフセット/offset 02ch
+        char    trk_name[32][16]; // オフセット/offset 084h 512 = 32 * 16
+        char    short_trk_name[32][8]; // オフセット/offset 254h 256 = 32 * 8
+        char    trk_mute[32]; // オフセット/offset 354h
+        char    trk_port[32]; // オフセット/offset 374h
+        char    trk_midi_ch[32]; // オフセット/offset 394h
+        char    trk_key_bias[32]; // オフセット/offset 3B4h
+        char    trk_transpose[32]; // オフセット/offset 3D4h
+        char    trk_play_filter[32][7]; // オフセット/offset 3F4h 224 = 32 * 7
+                                        // ＦＩＬＴＥＲ：形式１ ベロシティフィルター/Format 1 velocity filter ＦＩＬＴＥＲ：形式２ ボリュームフィルター/FILTER: Format 2 volume filter ＦＩＬＴＥＲ：形式３ パンポットフィルター/FILTER: Format 3 panpot filter have 7 typed parameters 1 byte sized each parameter
+                                        // ＦＩＬＴＥＲ：形式４ ピッチベンドフィルター/Format 4 pitch bend filter has 7 typed parameters some parameters are 2 bytes sized
+        char    instruments_name[128][4]; // オフセット/offset 4D4h 512 = 128 * 4
+        char    fm_midi_ch[6]; // オフセット/offset 6D4h
+        char    pcm_midi_ch[8]; // オフセット/offset 6DAh
+        char    fm_file_name[8]; // オフセット/offset 6E2h
+        char    pcm_file_name[8]; // オフセット/offset 6EAh
+        char    reserved[260]; // オフセット/offset 6F2h 260 = (32 * 8) + 4 ??? ＦＩＬＴＥＲ：形式４ ピッチベンドフィルター/Format 4 pitch bend filter additional space ???
+        char    appli_name[8]; // オフセット/offset 7F6h
+        char    appli_version[2]; // オフセット/offset 7FEh
+        int32_t size; // オフセット/offset 800h
+        char    signature; // オフセット/offset 804h
+        char    first_tempo; // オフセット/offset 805h
+    } EUPHEAD;
+
+    typedef struct {
+        char    trk_mute[32];
+        char    trk_port[32];
+        char    trk_midi_ch[32];
+        char    trk_key_bias[32];
+        char    trk_transpose[32];
+        char    fm_midi_ch[6];
+        char    pcm_midi_ch[8];
+        int32_t size;
+        char    signature;
+        char    first_tempo;
+        char*   eupData;
+    } EUPINFO;
+
+    // ヘッダ読み込み用バッファ
+    EUPHEAD eupHeader;
+    // EUP情報領域
+    EUPINFO eupInfo;
+
     // とりあえず, TOWNS emu のみに対応.
 
-    u_char *eupbuf = NULL;
+    uint8_t *eupbuf = nullptr;
     player->stopPlaying();
 
     {
         FILE *f = fopen(nameOfEupFile.c_str(), "rb");
-        if (f == NULL) {
+        if (f == nullptr) {
             perror(nameOfEupFile.c_str());
-            return NULL;
+            return nullptr;
         }
 
         struct stat statbufEupFile;
         if (fstat(fileno(f), &statbufEupFile) != 0) {
             perror(nameOfEupFile.c_str());
             fclose(f);
-            return NULL;
+            return nullptr;
         }
 
         if (statbufEupFile.st_size < 2048 + 6 + 6) {
             fprintf(stderr, "%s: too short file.\n", nameOfEupFile.c_str());
-            fflush(stderr);
+            std::fflush(stderr);
             fclose(f);
-            return NULL;
+            return nullptr;
         }
 
-        eupbuf = new u_char[statbufEupFile.st_size];
-        fread(eupbuf, statbufEupFile.st_size, 1, f);
+        size_t eupRead = fread(&eupHeader, 1, sizeof(EUPHEAD), f);
+        if (eupRead != sizeof(EUPHEAD)) {
+            fprintf(stderr, "EUP file does not follow specification.\n");
+            std::fflush(stderr);
+            fclose(f);
+            return nullptr;
+        }
+        else {
+            int trk;
+
+            // データー領域の確保
+            eupInfo.eupData = nullptr/*new uint8_t[eupHeader.size]*/;
+            //if (eupInfo.eupData == nullptr break;
+
+            eupInfo.first_tempo = eupHeader.first_tempo;
+            //player->tempo(eupInfo.first_tempo + 30);
+            fprintf(stderr, "eupInfo.first_tempo is %d.\n", eupInfo.first_tempo);
+
+            // ヘッダ情報のコピー
+            for (trk = 0; trk < 32; trk++) {
+                eupInfo.trk_mute[trk] = eupHeader.trk_mute[trk];
+                eupInfo.trk_port[trk] = eupHeader.trk_port[trk];
+                eupInfo.trk_midi_ch[trk] = eupHeader.trk_midi_ch[trk];
+                eupInfo.trk_key_bias[trk] = eupHeader.trk_key_bias[trk];
+                eupInfo.trk_transpose[trk] = eupHeader.trk_transpose[trk];
+
+                player->mapTrack_toChannel(trk, eupInfo.trk_midi_ch[trk]);
+                fprintf(stderr, "eupInfo.trk_midi_ch[%d] is %d.\n", trk, eupInfo.trk_midi_ch[trk]);
+            }
+            for (trk = 0; trk < 6; trk++) {
+                eupInfo.fm_midi_ch[trk] = eupHeader.fm_midi_ch[trk];
+
+                device->assignFmDeviceToChannel(eupInfo.fm_midi_ch[trk]);
+                fprintf(stderr, "eupInfo.fm_midi_ch[%d] is %d.\n", trk, eupInfo.fm_midi_ch[trk]);
+            }
+            for (trk = 0; trk < 8; trk++) {
+                eupInfo.pcm_midi_ch[trk] = eupHeader.pcm_midi_ch[trk];
+
+                device->assignPcmDeviceToChannel(eupInfo.pcm_midi_ch[trk]);
+                fprintf(stderr, "eupHeader.pcm_midi_ch[%d] is %d.\n", trk, eupHeader.pcm_midi_ch[trk]);
+            }
+            eupInfo.signature = eupHeader.signature;
+            //eupInfo.first_tempo = eupHeader.first_tempo;
+            eupInfo.size = eupHeader.size;
+        }
+
+        eupbuf = new uint8_t[statbufEupFile.st_size];
+        fseek(f, 0, SEEK_SET); // seek to start
+        eupRead = fread(eupbuf, 1, statbufEupFile.st_size, f);
+        if (eupRead != statbufEupFile.st_size) {
+            fprintf(stderr, "EUP not fully read: %zu instead of %lu.\n", eupRead, statbufEupFile.st_size);
+        }
         fclose(f);
     }
 
-    player->tempo(eupbuf[2048 + 5] + 30);
+    //player->tempo(eupbuf[2048 + 5] + 30);
+    player->tempo(eupInfo.first_tempo);
     // 初期テンポの設定のつもり.  これで正しい?
 
-    for (int n = 0; n < 32; n++) {
-        player->mapTrack_toChannel(n, eupbuf[0x394 + n]);
-    }
+    // moved above
+    //for (int n = 0; n < 32; n++) {
+    //    player->mapTrack_toChannel(n, eupbuf[0x394 + n]);
+    //}
 
-    for (int n = 0; n < 6; n++) {
-        device->assignFmDeviceToChannel(eupbuf[0x6d4 + n]);
-    }
-    for (int n = 0; n < 8; n++) {
-        device->assignPcmDeviceToChannel(eupbuf[0x6da + n]);
-    }
+    // moved above
+    //for (int n = 0; n < 6; n++) {
+    //    device->assignFmDeviceToChannel(eupbuf[0x6d4 + n]);
+    //}
+
+    // moved above
+    //for (int n = 0; n < 8; n++) {
+    //    device->assignPcmDeviceToChannel(eupbuf[0x6da + n]);
+    //}
 
     char nameBuf[1024];
 #ifdef _MSC_VER
-    char *fmppmbdir = std::getenv("USERPROFILE");
+    char *fmbpmbdir = std::getenv("USERPROFILE");
 #else
-    char *fmppmbdir = std::getenv("HOME");
+    char *fmbpmbdir = std::getenv("HOME");
 #endif
-    if (nullptr != fmppmbdir)
+    if (nullptr != fmbpmbdir)
     {
-        std::strcpy(nameBuf, fmppmbdir);
+        std::strcpy(nameBuf, fmbpmbdir);
 #ifdef _MSC_VER
-        std::strcat(nameBuf, "\\.eupplay\\fmb\\");
+        std::strcat(nameBuf, "\\.eupplay\\");
 #else
-        std::strcat(nameBuf,"/.eupplay/fmb/");
+        std::strcat(nameBuf,"/.eupplay/");
 #endif
     }
     else
     {
         nameBuf[0] = 0;
     }
-    string fmbPath(nameBuf); // 'fmb'
+    std::string fmbPath(nameBuf); // 'fmb'
     std::size_t nameBufLength = std::strlen(nameBuf);
     nameBuf[nameBufLength - 4] = 'p';
-    string pmbPath(nameBuf); // 'pmb'
+    std::string pmbPath(nameBuf); // 'pmb'
 #ifdef _MSC_VER
-    string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("\\") + 1) + ".\\");
+    std::string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("\\") + 1)/* + "\\"*/);
 #else
-    string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("/") + 1) + "./");
+    std::string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("/") + 1)/* + "/"*/);
 #endif
     fmbPath = eupDir + PATH_DELIMITER + fmbPath;
+    std::cerr << "fmbPath is " << fmbPath << std::endl;
     pmbPath = eupDir + PATH_DELIMITER + pmbPath;
+    std::cerr << "pmbPath is " << pmbPath << std::endl;
 
     {
 #if 0
-        u_char instrument[] = {
+        uint8_t instrument[] = {
             ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', // name
             1, 7, 1, 1,                             // detune / multiple
             23, 40, 38, 0,                          // output level
@@ -316,7 +434,7 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         };
 #else
-        u_char instrument[] = {
+        uint8_t instrument[] = {
             ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', // name
             17, 33, 10, 17,                         // detune / multiple
             25, 10, 57, 0,                          // output level
@@ -333,21 +451,21 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
             device->setFmInstrumentParameter(n, instrument);
         }
     }
-
+    /* FMB */
     {
         char fn0[16];
-        memcpy(fn0, eupbuf + 0x6e2, 8);
+        memcpy(fn0, eupHeader.fm_file_name/*eupbuf + 0x6e2*/, 8); /* verified 0x06e2 offset */
         fn0[8] = '\0';
-        string fn1(string(fn0) + ".fmb");
+        std::string fn1(std::string(fn0) + ".fmb");
         FILE *f = openFile_inPath(fn1, fmbPath);
         if (f != NULL) {
 #if defined ( _MSC_VER )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
-            u_char *buf1 = new u_char[statbuf1.st_size];
+            uint8_t *buf1 = new uint8_t[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
-                fflush(stderr);
+                std::fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -355,10 +473,10 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
 #if defined ( __MINGW32__ )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
-            u_char *buf1 = new u_char[statbuf1.st_size];
+            uint8_t *buf1 = new uint8_t[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
-                fflush(stderr);
+                std::fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -366,9 +484,12 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
-            u_char buf1[statbuf1.st_size];
+            uint8_t buf1[statbuf1.st_size];
 #endif // __GNUC__
-            fread(buf1, statbuf1.st_size, 1, f);
+            size_t fmbRead = fread(buf1, 1, statbuf1.st_size, f);
+            if (fmbRead != statbuf1.st_size) {
+                fprintf(stderr, "FMB not fully read: %zu instead of %lu.\n", fmbRead, statbuf1.st_size);
+            }
             fclose(f);
             for (int n = 0; n < (statbuf1.st_size - 8) / 48; n++) {
                 device->setFmInstrumentParameter(n, buf1 + 8 + 48 * n);
@@ -382,21 +503,21 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
 #endif // __MINGW32__
         }
     }
-
+    /* PMB */
     {
         char fn0[16];
-        memcpy(fn0, eupbuf + 0x6ea, 8);
+        memcpy(fn0, eupHeader.pcm_file_name/*eupbuf + 0x6ea*/, 8); /* verified 0x06ea offset */
         fn0[8] = '\0';
-        string fn1(string(fn0) + ".pmb");
+        std::string fn1(std::string(fn0) + ".pmb");
         FILE *f = openFile_inPath(fn1, pmbPath);
         if (f != NULL) {
 #if defined ( _MSC_VER )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
-            u_char *buf1 = new u_char[statbuf1.st_size];
+            uint8_t *buf1 = new uint8_t[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
-                fflush(stderr);
+                std::fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -404,10 +525,10 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
 #if defined ( __MINGW32__ )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
-            u_char *buf1 = new u_char[statbuf1.st_size];
+            uint8_t *buf1 = new uint8_t[statbuf1.st_size];
             if (NULL == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
-                fflush(stderr);
+                std::fflush(stderr);
                 fclose(f);
                 return NULL;
             }
@@ -415,9 +536,12 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
-            u_char buf1[statbuf1.st_size];
+            uint8_t buf1[statbuf1.st_size];
 #endif // __GNUC__
-            fread(buf1, statbuf1.st_size, 1, f);
+            size_t pmbRead = fread(buf1, 1, statbuf1.st_size, f);
+            if (pmbRead != statbuf1.st_size) {
+                fprintf(stderr, "PMB not fully read: %zu instead of %lu.\n", pmbRead, statbuf1.st_size);
+            }
             fclose(f);
             device->setPcmInstrumentParameters(buf1, statbuf1.st_size);
 #if defined ( _MSC_VER )
@@ -432,6 +556,12 @@ u_char *EUPPlayer_readFile(EUPPlayer *player,
     return eupbuf;
 }
 
+volatile std::sig_atomic_t signal_raised = 0;
+
+void set_signal_raised(int signal) {
+    signal_raised = 1;
+}
+
 #if defined ( _MSC_VER )
 #ifdef __cplusplus
 extern "C"
@@ -443,12 +573,12 @@ int main(int argc, char **argv)
 #endif // __MINGW32__
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
 int main(int argc, char **argv)
-#endif // __GNUC__
+#endif // __GNUC__ && !__MINGW32__
 {
-    FILE *outputFile = NULL;
+    FILE *outputFile = nullptr;
 
     EUP_TownsEmulator *dev = new EUP_TownsEmulator;
-    EUPPlayer *player = new EUPPlayer();
+    EUPPlayer *player = new EUPPlayer;
     /* signed 16 bit sample, little endian */
     dev->outputSampleUnsigned(false);
     dev->outputSampleLSBFirst(true);
@@ -456,17 +586,17 @@ int main(int argc, char **argv)
     dev->rate(streamAudioRate); /* Hz */
 
     /*fprintf(stderr, "sizeof(int16_t) = %d\n", (int)sizeof(int16_t));*/
-    /*fflush(stderr);*/
+    /*std::fflush(stderr);*/
 
     int c;
     while ((c = getopt(argc, argv, "v:d:o:")) != -1) {
         switch(c) {
             case 'v': {
-                dev->volume(strtol(optarg, NULL, 0));
+                dev->volume(strtol(optarg, nullptr, 0));
             }
             break;
             case 'd': {
-                istrstream str(optarg);
+                std::istrstream str(optarg);
                 while (!str.eof() && !str.fail()) {
                     int n;
                     str >> n;
@@ -476,20 +606,19 @@ int main(int argc, char **argv)
             break;
             case 'o': {
                 outputFile = fopen(optarg, "wb");
-                if (outputFile == NULL) {
+                if (outputFile == nullptr) {
                     fprintf(stderr, "Cannot open output file(%s)\n", optarg);
-                    fflush(stderr);
+                    std::fflush(stderr);
                     exit(1);
                 }
                 dev->output2File(true);
+                dev->outputStream(outputFile);
             }
             break;
         }
     }
 
-    if ( (NULL != outputFile) && (true == dev->output2File_read()) ) {
-        dev->outputStream(outputFile);
-
+    if ( (nullptr != dev->outputStream_get()) && (true == dev->output2File_read()) ) {
         // audio_write_wav_header
         unsigned char hdr[0x80];
 
@@ -541,10 +670,11 @@ int main(int argc, char **argv)
 //    setmode(fileno(stdout), _O_BINARY);
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-        setmode(fileno(stdout), _O_BINARY);
-#endif
-        dev->outputStream(stdout);
-        dev->output2File(false);
+//      setmode(fileno(stdout), _O_BINARY);
+#endif // __MINGW32__
+#if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
+//      setmode(fileno(stdout), _O_BINARY);
+#endif // __GNUC__ && !__MINGW32__
     }
 
     player->outputDevice(dev);
@@ -552,19 +682,19 @@ int main(int argc, char **argv)
     int optindex = optind;
     if (optindex > argc-1) {
         fprintf(stderr, "usage: %s [-v vol] [-d ch[,ch...]] [-o output] EUP-filename\n", argv[0]);
-        fflush(stderr);
+        std::fflush(stderr);
         exit(1);
     }
 
     SDL_version compiled;
     SDL_VERSION(&compiled);
     printf("compiled with SDL version %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch);
-    fflush(stdout);
+    std::fflush(stdout);
 
     SDL_version linked;
     SDL_GetVersion(&linked);
     printf("linked SDL version %d.%d.%d\n", linked.major, linked.minor, linked.patch);
-    fflush(stdout);
+    std::fflush(stdout);
 
     /* Enable standard application logging */
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
@@ -587,19 +717,19 @@ int main(int argc, char **argv)
     SDL_AudioSpec aRequested/*, aGranted*/;
 
     /* re-inizialize aRequested struct */
-    memset(&aRequested, 0, sizeof(aRequested));
+    std::memset(&aRequested, 0, sizeof(aRequested));
 
     aRequested.freq = streamAudioRate;
     aRequested.format = ( true == dev->outputSampleLSBFirst_read() ) ? AUDIO_S16LSB : AUDIO_S16MSB;
     aRequested.channels = streamAudioChannelsNum;
     aRequested.samples = streamAudioSamplesBlock;
     aRequested.callback = audio_callback;
-    aRequested.userdata = NULL;
+    aRequested.userdata = nullptr;
 
 /*    if (SDL_OpenAudio(&aRequested,&aGranted) < 0) {*/
-    if (SDL_OpenAudio(&aRequested,NULL) < 0) {
+    if (SDL_OpenAudio(&aRequested, nullptr) < 0) {
         printf("Audio open error!!\n");
-        fflush(stdout);
+        std::fflush(stdout);
         exit(1);
     }
 /*    if (aRequested.freq != aGranted.freq) {
@@ -616,13 +746,13 @@ int main(int argc, char **argv)
     }*/
 
     /* re-inizialize pcm struct */
-    memset(&pcm, 0, sizeof(pcm));
+    std::memset(&pcm, 0, sizeof(pcm));
 
     char const *nameOfEupFile = argv[optindex++];
-    u_char *buf = EUPPlayer_readFile(player, dev, nameOfEupFile);
+    uint8_t *buf = EUPPlayer_readFile(player, dev, nameOfEupFile);
     if (buf == NULL) {
         fprintf(stderr, "%s: read failed\n", argv[1]);
-        fflush(stderr);
+        std::fflush(stderr);
         exit(1);
     }
 
@@ -634,14 +764,21 @@ int main(int argc, char **argv)
         SDL_PauseAudio(SDL_FALSE);
     }
 
+    std::signal(SIGINT, set_signal_raised);
     while (player->isPlaying()) {
         player->nextTick();
+
+        if (1 == signal_raised)
+        {
+            signal_raised = 0;
+            break;
+        }
     }
 
     /* Stop the callback function playing the audio chunk */
     SDL_PauseAudio(SDL_TRUE);
 
-    if (true == dev->output2File_read()) {
+    if ( (nullptr != dev->outputStream_get()) && (true == dev->output2File_read()) ) {
         // audio_write_wav_header
         unsigned char littleEndianDWORD[4];
 

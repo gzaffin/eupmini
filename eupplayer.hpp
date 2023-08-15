@@ -54,7 +54,7 @@ public:
 };
 
 struct EUPHeader {
-    u_char dummy0[2048];
+    uint8_t dummy0[2048];
 };
 
 class EUPPlayer {
@@ -62,7 +62,7 @@ class EUPPlayer {
     PolyphonicAudioDevice *_outputDev;
     int _track2channel[_maxTrackNum];
     int _isPlaying;
-    u_char const *_curP;
+    uint8_t const *_curP;
     int _stepTime;
     int _tempo;
     friend int EUPPlayer_cmd_INVALID(int cmd, EUPPlayer *pl);
@@ -96,7 +96,7 @@ public:
     ~EUPPlayer();
     void outputDevice(PolyphonicAudioDevice *outputDev);
     void mapTrack_toChannel(int track, int channel);
-    void startPlaying(u_char const *ptr);
+    void startPlaying(uint8_t const *ptr);
     void stopPlaying();
     bool isPlaying() const;
     void nextTick();

@@ -8,9 +8,6 @@
 #ifndef TJH__EUP_TOWNSEMULATOR_H
 #define TJH__EUP_TOWNSEMULATOR_H
 
-#if defined ( _MSC_VER )
-#include <Winsock2.h>
-#endif // _MSC_VER
 #if defined ( __MINGW32__ )
 #include <sys/time.h>
 #endif // __MINGW32__
@@ -19,6 +16,7 @@
 #endif // __GNUC__
 #include <sys/types.h>
 #include <iostream>
+#include <cstdint>
 
 #include "eupplayer_towns.hpp"
 
@@ -46,9 +44,8 @@ struct pcm_struct {
 
     int count;
 
-    u_char buffer[streamAudioBufferOctectsSize];
+    uint8_t buffer[streamAudioBufferOctectsSize];
 };
-
 extern struct pcm_struct pcm;
 
 class TownsPcmInstrument;
@@ -62,8 +59,8 @@ public:
     EUP_TownsEmulator_MonophonicAudioSynthesizer() {}
     virtual ~EUP_TownsEmulator_MonophonicAudioSynthesizer() {}
     virtual void setControlParameter(int control, int value) = 0;
-    virtual void setInstrumentParameter(u_char const *fmInst,
-                                        u_char const *pcmInst) = 0;
+    virtual void setInstrumentParameter(uint8_t const *fmInst,
+                                        uint8_t const *pcmInst) = 0;
     virtual int velocity() const
     {
         return _velocity;
@@ -116,7 +113,7 @@ public:
     TownsFmEmulator_Operator();
     ~TownsFmEmulator_Operator();
     void feedbackLevel(int level);
-    void setInstrumentParameter(u_char const *instrument);
+    void setInstrumentParameter(uint8_t const *instrument);
     void velocity(int velo);
     void keyOn();
     void keyOff();
@@ -138,7 +135,7 @@ public:
     TownsFmEmulator();
     ~TownsFmEmulator();
     void setControlParameter(int control, int value);
-    void setInstrumentParameter(u_char const *fmInst, u_char const *pcmInst);
+    void setInstrumentParameter(uint8_t const *fmInst, uint8_t const *pcmInst);
     int velocity()
     {
         return EUP_TownsEmulator_MonophonicAudioSynthesizer::velocity();
@@ -158,7 +155,8 @@ class TownsPcmEmulator : public EUP_TownsEmulator_MonophonicAudioSynthesizer {
     int _offVelocity;
     int _note;
     int _frequencyOffs;
-    int _phase;
+    uint64_t _phase;
+
     TownsPcmInstrument const *_currentInstrument;
     TownsPcmSound const *_currentSound;
     TownsPcmEnvelope *_currentEnvelope;
@@ -166,7 +164,7 @@ public:
     TownsPcmEmulator();
     ~TownsPcmEmulator();
     void setControlParameter(int control, int value);
-    void setInstrumentParameter(u_char const *fmInst, u_char const *pcmInst);
+    void setInstrumentParameter(uint8_t const *fmInst, uint8_t const *pcmInst);
     void nextTick(int *outbuf, int buflen);
     void note(int n, int onVelo, int offVelo, int gateTime);
     void pitchBend(int value);
@@ -182,7 +180,7 @@ public:
     void add(EUP_TownsEmulator_MonophonicAudioSynthesizer *device);
     void note(int note, int onVelo, int offVelo, int gateTime);
     void setControlParameter(int control, int value);
-    void setInstrumentParameter(u_char const *fmInst, u_char const *pcmInst);
+    void setInstrumentParameter(uint8_t const *fmInst, uint8_t const *pcmInst);
     void pitchBend(int value);
     void nextTick(int *outbuf, int buflen);
     void rate(int r);
@@ -197,8 +195,8 @@ class EUP_TownsEmulator : public TownsAudioDevice {
          };
     EUP_TownsEmulator_Channel *_channel[_maxChannelNum];
     bool _enabled[_maxChannelNum];
-    u_char _fmInstrumentData[8 + 48*_maxFmInstrumentNum];
-    u_char *_fmInstrument[_maxFmInstrumentNum];
+    uint8_t _fmInstrumentData[8 + 48*_maxFmInstrumentNum];
+    uint8_t *_fmInstrument[_maxFmInstrumentNum]; // pointers into above _fmInstrumentData buffer
     TownsPcmInstrument *_pcmInstrument[_maxPcmInstrumentNum];
     TownsPcmSound *_pcmSound[_maxPcmSoundNum];
     int _rate;
@@ -235,8 +233,8 @@ public:
     }
     void assignFmDeviceToChannel(int channel);
     void assignPcmDeviceToChannel(int channel);
-    void setFmInstrumentParameter(int num, u_char const *instrument);
-    void setPcmInstrumentParameters(u_char const *instrument, size_t size);
+    void setFmInstrumentParameter(int num, uint8_t const *instrument);
+    void setPcmInstrumentParameters(uint8_t const *instrument, size_t size);
     void outputStream(FILE *ostr);
     FILE * outputStream_get();
     void nextTick();

@@ -5,10 +5,10 @@
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer.cpp
  */
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <cstring>
-#include <math.h>
+#include <cmath>
 #include <sys/stat.h>
 //#include <unistd.h>
 #if defined ( __MINGW32__ )
@@ -334,7 +334,7 @@ void EUPPlayer::mapTrack_toChannel(int track, int channel)
     _track2channel[track] = channel;
 }
 
-void EUPPlayer::startPlaying(u_char const *ptr)
+void EUPPlayer::startPlaying(uint8_t const *ptr)
 {
     _isPlaying = 0;
     if (ptr != NULL) {
@@ -418,7 +418,7 @@ void EUPPlayer::tempo(int t)
     }
 
     int t0 = 96 * t;
-    struct timeval tv;
+    struct timeval tv{};
     tv.tv_sec = 60 / t0;
     tv.tv_usec = ((60*1000*1000) / t0) - tv.tv_sec*1000*1000;
     if (_outputDev != NULL) {

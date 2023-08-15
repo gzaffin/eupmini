@@ -5,14 +5,12 @@
  * ./astyle --style=stroustrup --convert-tabs --add-braces eupplayer_townsEmulator.cpp
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <cstring>
-#include <stdint.h>
-#include <math.h>
+#include <cstdint>
+#include <cstdio>
 #include <sys/stat.h>
-//#include <unistd.h>
+#include <cassert>
+#include <cstring>
+#include <cmath>
 #if defined ( __MINGW32__ )
 #include <_bsd_types.h>
 #endif
@@ -29,22 +27,22 @@
 #include "sintbl.hpp"
 
 #if EUPPLAYER_LITTLE_ENDIAN
-static inline uint16_t P2(u_char const * const p)
+static inline uint16_t P2(uint8_t const * const p)
 {
     return *(uint16_t const *)p;
 }
-static inline uint32_t P4(u_char const * const p)
+static inline uint32_t P4(uint8_t const * const p)
 {
     return *(uint32_t const *)p;
 }
 #else
-static inline uint16_t P2(u_char const * const p)
+static inline uint16_t P2(uint8_t const * const p)
 {
     uint16_t const x0 = *p;
     uint16_t const x1 = *(p + 1);
     return x0 + (x1 << 8);
 }
-static inline uint32_t P4(u_char const * const p)
+static inline uint32_t P4(uint8_t const * const p)
 {
     uint32_t const x0 = P2(p);
     uint32_t const x1 = P2(p + 2);
@@ -88,7 +86,7 @@ class TownsPcmSound {
     int _keyNote;
     signed char *_samples;
 public:
-    TownsPcmSound(u_char const *p);
+    TownsPcmSound(uint8_t const *p);
     ~TownsPcmSound();
     int id() const
     {
@@ -120,7 +118,7 @@ public:
     }
 };
 
-TownsPcmSound::TownsPcmSound(u_char const *p)
+TownsPcmSound::TownsPcmSound(uint8_t const *p)
 {
     {
         u_int n = 0;
@@ -133,13 +131,13 @@ TownsPcmSound::TownsPcmSound(u_char const *p)
     _numSamples = P4(p+12);
     _loopStart = P4(p+16);
     _loopLength = P4(p+20);
-    _samplingRate = (u_int)(P2(p+24)) * (1000*0x10000/0x62);
+    _samplingRate = (uint32_t)(P2(p+24)) * (1000*0x10000/0x62);
     _keyOffset = P2(p+26);
-    _keyNote = *(u_char*)(p+28);
+    _keyNote = *(uint8_t*)(p+28);
     _samples = new signed char[_numSamples];
     for (int i = 0; i < _numSamples; i++) {
         int n = p[32+i];
-        _samples[i] = (n>=0x80)?(n&0x7f):(-n);
+        _samples[i] = (n >= 0x80)?(n & 0x7f):(-n);
     }
     //cerr << this->describe() << '\n';
 }
@@ -170,7 +168,7 @@ class TownsPcmEnvelope {
     int _rootKeyOffset;
 public:
     TownsPcmEnvelope(TownsPcmEnvelope const *e);
-    TownsPcmEnvelope(u_char const *p);
+    TownsPcmEnvelope(uint8_t const *p);
     ~TownsPcmEnvelope();
     void start(int rate);
     void release();
@@ -190,17 +188,17 @@ TownsPcmEnvelope::TownsPcmEnvelope(TownsPcmEnvelope const *e)
     memcpy(this, e, sizeof(*this));
 }
 
-TownsPcmEnvelope::TownsPcmEnvelope(u_char const *p)
+TownsPcmEnvelope::TownsPcmEnvelope(uint8_t const *p)
 {
     _state = _s_ready;
     _oldState = _s_ready;
     _currentLevel = 0;
-    _totalLevel = *(u_char*)(p+0);
-    _attackRate = *(u_char*)(p+1) * 10;
-    _decayRate = *(u_char*)(p+2) * 10;
-    _sustainLevel = *(u_char*)(p+3);
-    _sustainRate = *(u_char*)(p+4) * 20;
-    _releaseRate = *(u_char*)(p+5) * 10;
+    _totalLevel = *(uint8_t*)(p+0);
+    _attackRate = *(uint8_t*)(p+1) * 10;
+    _decayRate = *(uint8_t*)(p+2) * 10;
+    _sustainLevel = *(uint8_t*)(p+3);
+    _sustainRate = *(uint8_t*)(p+4) * 20;
+    _releaseRate = *(uint8_t*)(p+5) * 10;
     _rootKeyOffset = *(char*)(p+6);
     //cerr << this->describe() << '\n';
 }
@@ -257,7 +255,6 @@ int TownsPcmEnvelope::nextTick()
         }
         break;
     case _s_decaying:
-#if 1
         if (_decayRate == 0) {
             _currentLevel = _sustainLevel;
         }
@@ -273,10 +270,8 @@ int TownsPcmEnvelope::nextTick()
             _state = _s_sustaining;
             _tickCount = 0;
         }
-#endif
         break;
     case _s_sustaining:
-#if 1
         if (_sustainRate == 0) {
             _currentLevel = 0;
         }
@@ -292,10 +287,8 @@ int TownsPcmEnvelope::nextTick()
             _state = _s_ready;
             _tickCount = 0;
         }
-#endif
         break;
     case _s_releasing:
-#if 1
         if (_releaseRate == 0) {
             _currentLevel = 0;
         }
@@ -310,7 +303,6 @@ int TownsPcmEnvelope::nextTick()
             _currentLevel = 0;
             _state = _s_ready;
         }
-#endif
         break;
     default:
         // ここには来ないはず
@@ -330,14 +322,14 @@ class TownsPcmInstrument {
     TownsPcmSound const *_sound[_maxSplitNum];
     TownsPcmEnvelope *_envelope[_maxSplitNum];
 public:
-    TownsPcmInstrument(u_char const *p);
+    TownsPcmInstrument(uint8_t const *p);
     TownsPcmInstrument();
     void registerSound(TownsPcmSound const *sound);
     TownsPcmSound const *findSound(int note) const;
     TownsPcmEnvelope const *findEnvelope(int note) const;
 };
 
-TownsPcmInstrument::TownsPcmInstrument(u_char const *p)
+TownsPcmInstrument::TownsPcmInstrument(uint8_t const *p)
 {
     {
         u_int n = 0;
@@ -361,20 +353,22 @@ TownsPcmInstrument::TownsPcmInstrument()
 
 void TownsPcmInstrument::registerSound(TownsPcmSound const *sound)
 {
-    for (int i = 0; i < _maxSplitNum; i++)
+    for (int i = 0; i < _maxSplitNum; i++) {
         if (_soundId[i] == sound->id()) {
             _sound[i] = sound;
         }
+    }
 }
 
 TownsPcmSound const *TownsPcmInstrument::findSound(int note) const
 {
     // 少なくともどれかの split を選択できるようにしておこう
     int splitNum;
-    for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++)
+    for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++) {
         if (note <= _split[splitNum]) {
             break;
         }
+    }
     return _sound[splitNum];
 }
 
@@ -382,10 +376,11 @@ TownsPcmEnvelope const *TownsPcmInstrument::findEnvelope(int note) const
 {
     // 少なくともどれかの split を選択できるようにしておこう
     int splitNum;
-    for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++)
+    for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++) {
         if (note <= _split[splitNum]) {
             break;
         }
+    }
     return _envelope[splitNum];
 }
 
@@ -886,12 +881,49 @@ TownsPcmEmulator::~TownsPcmEmulator()
 void TownsPcmEmulator::setControlParameter(int control, int value)
 {
     switch (control) {
+    case 0:
+        // Bank Select (for devices with more than 128 programs)
+        // base for "program change" commands
+        if (value > 0) {
+            fprintf(stderr, "warning: unsupported Bank Select: %d\n", value);
+        }
+        break;
+
+    case 1:
+        // Modulation controls a vibrato effect (pitch, loudness, brighness)
+        if (value > 0) {
+            fprintf(stderr, "warning: use of unimplemented PCM Modulation: %d\n", value);
+        }
+        break;
+
     case 7:
         _control7 = value;
         break;
+
     case 10:
-        // panpot
+        // panpot - rf5c68 seems to have an 8-bit pan register where low-nibble controls output to left
+        // speaker and high-nibble the right..
+        //value -= 0x40;
+        //_volL = 0x10 - (0x10*value/0x40);
+        //_volR = 0x10 + (0x10*value/0x40);
         break;
+
+    case 11:
+        // MIDI: Expression  - testcase; Passionate Ocean
+        // Expression is a "percentage" of volume (CC7).
+        //_expression= value;
+        //if (value != 127) {
+        //    fprintf(stderr, "warning: song uses unimplemented Expression control\n");
+        //}
+        break;
+
+    case 64:
+        // Sustain Pedal (on/off) testcase: Bach: Aria on G String"
+        if (value > 0) {
+            fprintf(stderr, "warning: use of unimplemented PCM Sustain Pedal: %d\n", value);
+        }
+        break;
+
     default:
         fprintf(stderr, "TownsFmEmulator::setControlParameter: unknown control %d, val=%d\n", control, value);
         fflush(stderr);
@@ -899,10 +931,10 @@ void TownsPcmEmulator::setControlParameter(int control, int value)
     };
 }
 
-void TownsPcmEmulator::setInstrumentParameter(u_char const *fmInst,
-        u_char const *pcmInst)
+void TownsPcmEmulator::setInstrumentParameter(uint8_t const *fmInst,
+        uint8_t const *pcmInst)
 {
-    u_char const *instrument = pcmInst;
+    uint8_t const *instrument = pcmInst;
     if (instrument == NULL) {
         fprintf(stderr, "%s@%p: can not set null instrument\n",
                 "TownsPcmEmulator::setInstrumentParameter", this);
@@ -934,7 +966,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         return;
     }
 
-    int phaseStep;
+    uint32_t phaseStep;
     {
         int64_t ps = frequencyTable[_note];
         ps *= powtbl[_frequencyOffs>>4];
@@ -961,15 +993,13 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
             break;
         }
 
-#if 0
-        int output = soundSamples[_phase>>16];
-#else
         // 線型補間する。
         int output;
         {
-            int phase0 = _phase;
-            int phase1 = _phase + 0x10000;
+            uint32_t phase0 = _phase;
+            uint32_t phase1 = _phase + 0x10000;
             if (phase1 >= numSamples) {
+                // it's safe even if loopLength == 0, because soundSamples[] is extended by 1 and filled with 0 (see TownsPcmSound::TownsPcmSound).
                 phase1 -= loopLength;
             }
             phase0 >>= 16;
@@ -981,7 +1011,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
             output = soundSamples[phase0] * weight0 + soundSamples[phase1] * weight1;
             output >>= 16;
         }
-#endif
+
         output *= this->velocity(); // 信じられないかも知れないけど、FM と違うんです。
         output <<= 1;
         output *= _currentEnvelope->nextTick();
@@ -1071,8 +1101,8 @@ void EUP_TownsEmulator_Channel::setControlParameter(int control, int value)
     }
 }
 
-void EUP_TownsEmulator_Channel::setInstrumentParameter(u_char const *fmInst,
-        u_char const *pcmInst)
+void EUP_TownsEmulator_Channel::setInstrumentParameter(uint8_t const *fmInst,
+        uint8_t const *pcmInst)
 {
     for (int n = 0; _dev[n] != NULL; n++) {
         _dev[n]->setInstrumentParameter(fmInst, pcmInst);
@@ -1114,6 +1144,7 @@ EUP_TownsEmulator::EUP_TownsEmulator()
     this->outputSampleSize(1);
     this->outputSampleLSBFirst(true);
     this->rate(8000);
+    std::memset(&_fmInstrumentData[0], 0, sizeof(_fmInstrumentData));
     for (int n = 0; n < _maxFmInstrumentNum; n++) {
         _fmInstrument[n] = _fmInstrumentData + 8 + 48*n;
     }
@@ -1153,12 +1184,14 @@ void EUP_TownsEmulator::assignPcmDeviceToChannel(int channel)
 {
     CHECK_CHANNEL_NUM("EUP_TownsEmulator::assignPcmDeviceToChannel", channel);
 
+	if (channel >= _maxChannelNum) return;	// original impl created out of bounds write to _channel[]
+
     EUP_TownsEmulator_MonophonicAudioSynthesizer *dev = new TownsPcmEmulator;
     dev->rate(_rate);
     _channel[channel]->add(dev);
 }
 
-void EUP_TownsEmulator::setFmInstrumentParameter(int num, u_char const *instrument)
+void EUP_TownsEmulator::setFmInstrumentParameter(int num, uint8_t const *instrument)
 {
     if (num < 0 || num >= _maxFmInstrumentNum) {
         fprintf(stderr, "%s: FM instrument number %d out of range\n",
@@ -1169,7 +1202,7 @@ void EUP_TownsEmulator::setFmInstrumentParameter(int num, u_char const *instrume
     memcpy(_fmInstrument[num], instrument, 48);
 }
 
-void EUP_TownsEmulator::setPcmInstrumentParameters(u_char const *instrument, size_t size)
+void EUP_TownsEmulator::setPcmInstrumentParameters(uint8_t const *instrument, size_t size)
 {
     for (int n = 0; n < _maxPcmInstrumentNum; n++) {
         if (_pcmInstrument[n] != NULL) {
@@ -1177,7 +1210,7 @@ void EUP_TownsEmulator::setPcmInstrumentParameters(u_char const *instrument, siz
         }
         _pcmInstrument[n] = new TownsPcmInstrument(instrument+8+128*n);
     }
-    u_char const *p = instrument + 8 + 128*32;
+    uint8_t const *p = instrument + 8 + 128*32;
     for (int m = 0; m < _maxPcmSoundNum && p<(instrument+size); m++) {
         if (_pcmSound[m] != NULL) {
             delete _pcmSound[m];
@@ -1415,14 +1448,14 @@ void EUP_TownsEmulator::programChange(int channel, int num)
 {
     CHECK_CHANNEL_NUM("EUP_TownsEmulator::programChange", channel);
 
-    u_char *fminst = NULL;
-    u_char *pcminst = NULL;
+    uint8_t *fminst = NULL;
+    uint8_t *pcminst = NULL;
 
     if (0 <= num && num < _maxFmInstrumentNum) {
         fminst = _fmInstrument[num];
     }
     if (0 <= num && num < _maxPcmInstrumentNum) {
-        pcminst = (u_char*)_pcmInstrument[num];
+        pcminst = (uint8_t*)_pcmInstrument[num];
     }
 
     _channel[channel]->setInstrumentParameter(fminst, pcminst);

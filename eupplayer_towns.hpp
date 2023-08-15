@@ -23,8 +23,8 @@ public:
     virtual void pitchBend(int channel, int value) = 0;
     virtual void assignFmDeviceToChannel(int channel) = 0;
     virtual void assignPcmDeviceToChannel(int channel) = 0;
-    virtual void setFmInstrumentParameter(int num, u_char const *instrument) = 0;
-    virtual void setPcmInstrumentParameters(u_char const *instrument, size_t size) = 0;
+    virtual void setFmInstrumentParameter(int num, uint8_t const *instrument) = 0;
+    virtual void setPcmInstrumentParameters(uint8_t const *instrument, size_t size) = 0;
 };
 
 #endif
