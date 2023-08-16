@@ -144,7 +144,7 @@ TownsPcmSound::TownsPcmSound(uint8_t const *p)
 
 TownsPcmSound::~TownsPcmSound()
 {
-    if (_samples != NULL) {
+    if (_samples != nullptr) {
         delete _samples;
     }
 }
@@ -341,7 +341,7 @@ TownsPcmInstrument::TownsPcmInstrument(uint8_t const *p)
     for (int n = 0; n < _maxSplitNum; n++) {
         _split[n] = P2(p+16+2*n);
         _soundId[n] = P4(p+32+4*n);
-        _sound[n] = NULL;
+        _sound[n] = nullptr;
         _envelope[n] = new TownsPcmEnvelope(p+64+8*n);
     }
     //cerr << this->describe() << '\n';
@@ -712,7 +712,7 @@ void TownsFmEmulator::setInstrumentParameter(u_char const *fmInst,
 {
     u_char const *instrument = fmInst;
 
-    if (instrument == NULL) {
+    if (instrument == nullptr) {
         fprintf(stderr, "%s@%p: can not set null instrument\n",
                 "TownsFmEmulator::setInstrumentParameter", this);
         fflush(stderr);
@@ -869,9 +869,9 @@ TownsPcmEmulator::TownsPcmEmulator()
     this->velocity(0);
     _gateTime = 0;
     _frequencyOffs = 0x2000;
-    _currentInstrument = NULL;
-    _currentEnvelope = NULL;
-    _currentSound = NULL;
+    _currentInstrument = nullptr;
+    _currentEnvelope = nullptr;
+    _currentSound = nullptr;
 }
 
 TownsPcmEmulator::~TownsPcmEmulator()
@@ -935,7 +935,7 @@ void TownsPcmEmulator::setInstrumentParameter(uint8_t const *fmInst,
         uint8_t const *pcmInst)
 {
     uint8_t const *instrument = pcmInst;
-    if (instrument == NULL) {
+    if (instrument == nullptr) {
         fprintf(stderr, "%s@%p: can not set null instrument\n",
                 "TownsPcmEmulator::setInstrumentParameter", this);
         fflush(stderr);
@@ -950,7 +950,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
 {
     // steptime ひとつ分進める
 
-    if (_currentEnvelope == NULL) {
+    if (_currentEnvelope == nullptr) {
         return;
     }
     if (_gateTime > 0 && --_gateTime <= 0) {
@@ -962,7 +962,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
     }
     if (this->velocity() == 0) {
         delete _currentEnvelope;
-        _currentEnvelope = NULL;
+        _currentEnvelope = nullptr;
         return;
     }
 
@@ -988,7 +988,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
             _gateTime = 0;
             this->velocity(0);
             delete _currentEnvelope;
-            _currentEnvelope = NULL;
+            _currentEnvelope = nullptr;
             // 上との関係もあるしもっといい方法がありそう
             break;
         }
@@ -1033,13 +1033,13 @@ void TownsPcmEmulator::note(int n, int onVelo, int offVelo, int gateTime)
     _offVelocity = offVelo;
     _gateTime = gateTime;
     _phase = 0;
-    if (_currentInstrument != NULL) {
+    if (_currentInstrument != nullptr) {
         _currentSound = _currentInstrument->findSound(n);
         _currentEnvelope = new TownsPcmEnvelope(_currentInstrument->findEnvelope(n));
         _currentEnvelope->start(this->rate());
     }
     else {
-        _currentSound = NULL;
+        _currentSound = nullptr;
     }
 }
 
@@ -1052,13 +1052,13 @@ void TownsPcmEmulator::pitchBend(int value)
 
 EUP_TownsEmulator_Channel::EUP_TownsEmulator_Channel()
 {
-    _dev[0] = NULL;
+    _dev[0] = nullptr;
     _lastNotedDeviceNum = 0;
 }
 
 EUP_TownsEmulator_Channel::~EUP_TownsEmulator_Channel()
 {
-    for (int n = 0; _dev[n] != NULL; n++) {
+    for (int n = 0; _dev[n] != nullptr; n++) {
         delete _dev[n];
     }
 }
@@ -1066,9 +1066,9 @@ EUP_TownsEmulator_Channel::~EUP_TownsEmulator_Channel()
 void EUP_TownsEmulator_Channel::add(EUP_TownsEmulator_MonophonicAudioSynthesizer *device)
 {
     for (int n = 0; n < _maxDevices; n++)
-        if (_dev[n] == NULL) {
+        if (_dev[n] == nullptr) {
             _dev[n] = device;
-            _dev[n+1] = NULL;
+            _dev[n+1] = nullptr;
             break;
         }
 }
@@ -1076,14 +1076,14 @@ void EUP_TownsEmulator_Channel::add(EUP_TownsEmulator_MonophonicAudioSynthesizer
 void EUP_TownsEmulator_Channel::note(int note, int onVelo, int offVelo, int gateTime)
 {
     int n = _lastNotedDeviceNum;
-    if (_dev[n] == NULL || _dev[n+1] == NULL) {
+    if (_dev[n] == nullptr || _dev[n+1] == nullptr) {
         n = 0;
     }
     else {
         n++;
     }
 
-    if (_dev[n] != NULL) {
+    if (_dev[n] != nullptr) {
         _dev[n]->note(note, onVelo, offVelo, gateTime);
     }
 
@@ -1096,7 +1096,7 @@ void EUP_TownsEmulator_Channel::note(int note, int onVelo, int offVelo, int gate
 void EUP_TownsEmulator_Channel::setControlParameter(int control, int value)
 {
     // いいのかこれで?
-    for (int n = 0; _dev[n] != NULL; n++) {
+    for (int n = 0; _dev[n] != nullptr; n++) {
         _dev[n]->setControlParameter(control, value);
     }
 }
@@ -1104,7 +1104,7 @@ void EUP_TownsEmulator_Channel::setControlParameter(int control, int value)
 void EUP_TownsEmulator_Channel::setInstrumentParameter(uint8_t const *fmInst,
         uint8_t const *pcmInst)
 {
-    for (int n = 0; _dev[n] != NULL; n++) {
+    for (int n = 0; _dev[n] != nullptr; n++) {
         _dev[n]->setInstrumentParameter(fmInst, pcmInst);
     }
 }
@@ -1112,21 +1112,21 @@ void EUP_TownsEmulator_Channel::setInstrumentParameter(uint8_t const *fmInst,
 void EUP_TownsEmulator_Channel::pitchBend(int value)
 {
     // いいのかこれで?
-    for (int n = 0; _dev[n] != NULL; n++) {
+    for (int n = 0; _dev[n] != nullptr; n++) {
         _dev[n]->pitchBend(value);
     }
 }
 
 void EUP_TownsEmulator_Channel::nextTick(int *outbuf, int buflen)
 {
-    for (int n = 0; _dev[n] != NULL; n++) {
+    for (int n = 0; _dev[n] != nullptr; n++) {
         _dev[n]->nextTick(outbuf, buflen);
     }
 }
 
 void EUP_TownsEmulator_Channel::rate(int r)
 {
-    for (int n = 0; _dev[n] != NULL; n++) {
+    for (int n = 0; _dev[n] != nullptr; n++) {
         _dev[n]->rate(r);
     }
 }
@@ -1135,7 +1135,7 @@ void EUP_TownsEmulator_Channel::rate(int r)
 
 EUP_TownsEmulator::EUP_TownsEmulator()
 {
-    _ostr = NULL;
+    _ostr = nullptr;
     for (int n = 0; n < _maxChannelNum; n++) {
         _channel[n] = new EUP_TownsEmulator_Channel;
         _enabled[n] = true;
@@ -1149,10 +1149,10 @@ EUP_TownsEmulator::EUP_TownsEmulator()
         _fmInstrument[n] = _fmInstrumentData + 8 + 48*n;
     }
     for (int n = 0; n < _maxPcmInstrumentNum; n++) {
-        _pcmInstrument[n] = NULL;
+        _pcmInstrument[n] = nullptr;
     }
     for (int n = 0; n < _maxPcmSoundNum; n++) {
-        _pcmSound[n] = NULL;
+        _pcmSound[n] = nullptr;
     }
 }
 
@@ -1162,11 +1162,11 @@ EUP_TownsEmulator::~EUP_TownsEmulator()
         delete _channel[n];
     }
     for (int n = 0; n < _maxPcmInstrumentNum; n++)
-        if (_pcmInstrument[n] != NULL) {
+        if (_pcmInstrument[n] != nullptr) {
             delete _pcmInstrument[n];
         }
     for (int n = 0; n < _maxPcmSoundNum; n++)
-        if (_pcmSound[n] != NULL) {
+        if (_pcmSound[n] != nullptr) {
             delete _pcmSound[n];
         }
 }
@@ -1205,14 +1205,14 @@ void EUP_TownsEmulator::setFmInstrumentParameter(int num, uint8_t const *instrum
 void EUP_TownsEmulator::setPcmInstrumentParameters(uint8_t const *instrument, size_t size)
 {
     for (int n = 0; n < _maxPcmInstrumentNum; n++) {
-        if (_pcmInstrument[n] != NULL) {
+        if (_pcmInstrument[n] != nullptr) {
             delete _pcmInstrument[n];
         }
         _pcmInstrument[n] = new TownsPcmInstrument(instrument+8+128*n);
     }
     uint8_t const *p = instrument + 8 + 128*32;
     for (int m = 0; m < _maxPcmSoundNum && p<(instrument+size); m++) {
-        if (_pcmSound[m] != NULL) {
+        if (_pcmSound[m] != nullptr) {
             delete _pcmSound[m];
         }
         _pcmSound[m] = new TownsPcmSound(p);
@@ -1251,7 +1251,7 @@ void EUP_TownsEmulator::nextTick()
     buflen++;
 #if defined ( _MSC_VER )
     int *buf0 = new int[buflen];
-    if (NULL == buf0) {
+    if (nullptr == buf0) {
         fprintf(stderr, "heap allocation problem.\n");
         fflush(stderr);
         exit(0);
@@ -1259,7 +1259,7 @@ void EUP_TownsEmulator::nextTick()
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
     int *buf0 = new int[buflen];
-    if (NULL == buf0) {
+    if (nullptr == buf0) {
         fprintf(stderr, "heap allocation problem.\n");
         fflush(stderr);
         exit(0);
@@ -1280,7 +1280,7 @@ void EUP_TownsEmulator::nextTick()
     if (_outputSampleSize == 1) {
 #if defined ( _MSC_VER )
         u_char *buf1 = new u_char[buflen];
-        if (NULL == buf1) {
+        if (nullptr == buf1) {
             fprintf(stderr, "heap allocation problem.\n");
             fflush(stderr);
             exit(0);
@@ -1288,7 +1288,7 @@ void EUP_TownsEmulator::nextTick()
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
         u_char *buf1 = new u_char[buflen];
-        if (NULL == buf1) {
+        if (nullptr == buf1) {
             fprintf(stderr, "heap allocation problem.\n");
             fflush(stderr);
             exit(0);
@@ -1321,7 +1321,7 @@ void EUP_TownsEmulator::nextTick()
         if (true == this->output2File_read()) {
 #if defined ( _MSC_VER )
             u_char *buf1 = new u_char[buflen * 2];
-            if (NULL == buf1) {
+            if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);
                 exit(0);
@@ -1329,7 +1329,7 @@ void EUP_TownsEmulator::nextTick()
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
             u_char *buf1 = new u_char[buflen * 2];
-            if (NULL == buf1) {
+            if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);
                 exit(0);
@@ -1448,8 +1448,8 @@ void EUP_TownsEmulator::programChange(int channel, int num)
 {
     CHECK_CHANNEL_NUM("EUP_TownsEmulator::programChange", channel);
 
-    uint8_t *fminst = NULL;
-    uint8_t *pcminst = NULL;
+    uint8_t *fminst = nullptr;
+    uint8_t *pcminst = nullptr;
 
     if (0 <= num && num < _maxFmInstrumentNum) {
         fminst = _fmInstrument[num];

@@ -32,17 +32,17 @@
 #include <vector>
 #include <strstream>
 
-#if defined ( _MSC_VER )
-#ifndef _WINGETOPT_H_
-#define _WINGETOPT_H_
-
 #ifdef _MSC_VER
-// following SDL_MAIN_HANDLED macro is managed with CMake
-//#define SDL_MAIN_HANDLED
+ // following SDL_MAIN_HANDLED macro is managed with CMake
+ //#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #else
 #include <SDL.h>
 #endif
+
+#if defined ( _MSC_VER )
+#ifndef _WINGETOPT_H_
+#define _WINGETOPT_H_
 
 #define GETOPT_EOF (-1)
 #define GETOPT_ERR(s, c) if (opterr) { \
@@ -56,26 +56,26 @@
 int opterr = 1;
 int optind = 1;
 int optopt = 0;
-char * optarg = NULL;
+char * optarg = nullptr;
 
 int getopt(int argc, char ** argv, const char * opts)
 {
     static int sp = 1;
     int c;
-    const char * cp = NULL;
+    const char * cp = nullptr;
 
     if (sp == 1) {
         if ((optind >= argc) || (argv[optind][0] != '-') || (argv[optind][1] == '\0')) {
             return GETOPT_EOF;
         }
-        else if (strcmp(argv[optind], "--") == NULL) {
+        else if (std::strcmp(argv[optind], "--") == 0) {
             optind++;
             return GETOPT_EOF;
         }
     }
 
     optopt = c = argv[optind][sp];
-    if (c == ':' || (cp = strchr(opts, c)) == NULL) {
+    if (c == ':' || (cp = std::strchr(opts, c)) == nullptr) {
         GETOPT_ERR(": illegal option -- ", c);
 
         if (argv[optind][++sp] == '\0') {
@@ -105,7 +105,7 @@ int getopt(int argc, char ** argv, const char * opts)
             sp = 1;
             optind++;
         }
-        optarg = NULL;
+        optarg = nullptr;
     }
 
     return(c);
@@ -113,6 +113,7 @@ int getopt(int argc, char ** argv, const char * opts)
 
 #endif  /* _WINGETOPT_H_ */
 #endif // _MSC_VER
+
 #if defined ( __MINGW32__ )
 #include <unistd.h> /* is it for declaring int getopt(int, char * const [], const char *) ? */
 #endif // __MINGW32__
@@ -198,7 +199,7 @@ static std::string const upcase(std::string const &s)
 
 static FILE *openFile_inPath(std::string const &filename, std::string const &path)
 {
-    FILE *f = NULL;
+    FILE *f = nullptr;
     std::vector<std::string> fn2;
     fn2.push_back(filename);
     fn2.push_back(downcase(filename));
@@ -221,13 +222,13 @@ static FILE *openFile_inPath(std::string const &filename, std::string const &pat
 #endif
             std::cerr << "trying " << filename << std::endl;
             f = fopen(filename.c_str(), "rb");
-            if (f != NULL) {
+            if (f != nullptr) {
                 std::cerr << "loading " << filename << std::endl;
                 return f;
             }
         }
     }
-    if (f == NULL) {
+    if (f == nullptr) {
         fprintf(stderr, "error finding %s\n", filename.c_str());
         std::fflush(stderr);
     }
@@ -242,8 +243,8 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
     // EUPﾌｧｲﾙﾍｯﾀﾞ構造体
     typedef struct {
         char    title[32]; // オフセット/offset 000h タイトルは半角32文字，全角で16文字以内の文字列で指定します。The title is specified as a character string of 32 half-width characters or less and 16 full-width characters or less.
-        char    short_title[12]; // オフセット/offset 020h
-        char    dummy[40]; // オフセット/offset 02ch
+        char    artist[8]; // オフセット/offset 020h
+        char    dummy[44]; // オフセット/offset 028h
         char    trk_name[32][16]; // オフセット/offset 084h 512 = 32 * 16
         char    short_trk_name[32][8]; // オフセット/offset 254h 256 = 32 * 8
         char    trk_mute[32]; // オフセット/offset 354h
@@ -405,10 +406,8 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
     {
         nameBuf[0] = 0;
     }
-    std::string fmbPath(nameBuf); // 'fmb'
-    std::size_t nameBufLength = std::strlen(nameBuf);
-    nameBuf[nameBufLength - 4] = 'p';
-    std::string pmbPath(nameBuf); // 'pmb'
+    std::string fmbPath(nameBuf);
+    std::string pmbPath(nameBuf);
 #ifdef _MSC_VER
     std::string eupDir(nameOfEupFile.substr(0, nameOfEupFile.rfind("\\") + 1)/* + "\\"*/);
 #else
@@ -458,27 +457,27 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
         fn0[8] = '\0';
         std::string fn1(std::string(fn0) + ".fmb");
         FILE *f = openFile_inPath(fn1, fmbPath);
-        if (f != NULL) {
+        if (f != nullptr) {
 #if defined ( _MSC_VER )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
             uint8_t *buf1 = new uint8_t[statbuf1.st_size];
-            if (NULL == buf1) {
+            if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 std::fflush(stderr);
                 fclose(f);
-                return NULL;
+                return nullptr;
             }
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
             uint8_t *buf1 = new uint8_t[statbuf1.st_size];
-            if (NULL == buf1) {
+            if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 std::fflush(stderr);
                 fclose(f);
-                return NULL;
+                return nullptr;
             }
 #endif // __MINGW32__
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
@@ -510,27 +509,27 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
         fn0[8] = '\0';
         std::string fn1(std::string(fn0) + ".pmb");
         FILE *f = openFile_inPath(fn1, pmbPath);
-        if (f != NULL) {
+        if (f != nullptr) {
 #if defined ( _MSC_VER )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
             uint8_t *buf1 = new uint8_t[statbuf1.st_size];
-            if (NULL == buf1) {
+            if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 std::fflush(stderr);
                 fclose(f);
-                return NULL;
+                return nullptr;
             }
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
             struct stat statbuf1;
             fstat(fileno(f), &statbuf1);
             uint8_t *buf1 = new uint8_t[statbuf1.st_size];
-            if (NULL == buf1) {
+            if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 std::fflush(stderr);
                 fclose(f);
-                return NULL;
+                return nullptr;
             }
 #endif // __MINGW32__
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
@@ -750,7 +749,7 @@ int main(int argc, char **argv)
 
     char const *nameOfEupFile = argv[optindex++];
     uint8_t *buf = EUPPlayer_readFile(player, dev, nameOfEupFile);
-    if (buf == NULL) {
+    if (buf == nullptr) {
         fprintf(stderr, "%s: read failed\n", argv[1]);
         std::fflush(stderr);
         exit(1);

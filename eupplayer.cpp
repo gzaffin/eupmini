@@ -306,7 +306,7 @@ EUPPlayer::EUPPlayer()
         _track2channel[i] = 0;
     }
 
-    _outputDev = NULL;
+    _outputDev = nullptr;
     _stepTime = 0;
     _tempo = -1;
     this->stopPlaying();
@@ -337,7 +337,7 @@ void EUPPlayer::mapTrack_toChannel(int track, int channel)
 void EUPPlayer::startPlaying(uint8_t const *ptr)
 {
     _isPlaying = 0;
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
         _curP = ptr;
         _isPlaying = 1;
         _stepTime = 0;
@@ -397,7 +397,7 @@ void EUPPlayer::nextTick()
             }
         }
 
-    if (_outputDev != NULL) {
+    if (_outputDev != nullptr) {
         _outputDev->nextTick();
     }
 
@@ -421,7 +421,7 @@ void EUPPlayer::tempo(int t)
     struct timeval tv{};
     tv.tv_sec = 60 / t0;
     tv.tv_usec = ((60*1000*1000) / t0) - tv.tv_sec*1000*1000;
-    if (_outputDev != NULL) {
+    if (_outputDev != nullptr) {
         _outputDev->timeStep(tv);
     }
 }
