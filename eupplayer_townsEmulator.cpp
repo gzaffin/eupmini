@@ -82,6 +82,7 @@ class TownsPcmSound {
     int _loopStart;
     int _loopLength;
     int _samplingRate;
+    int _adjustedSamplingRate;
     int _keyOffset;
     int _keyNote;
     signed char *_samples;
@@ -108,6 +109,14 @@ public:
     {
         return _samplingRate;
     }
+    int keyOffset() const
+    {
+        return _keyOffset;
+    }
+    int adjustedSamplingRate() const
+    {
+        return _adjustedSamplingRate;
+    }
     int keyNote() const
     {
         return _keyNote;
@@ -123,21 +132,33 @@ TownsPcmSound::TownsPcmSound(uint8_t const *p)
     {
         u_int n = 0;
         for (; n < sizeof(_name)-1; n++) {
-            _name[n] = p[n];
+            _name[n] = static_cast<char>(p[n]);
         }
         _name[n] = '\0';
     }
-    _id = P4(p+8);
-    _numSamples = P4(p+12);
-    _loopStart = P4(p+16);
-    _loopLength = P4(p+20);
-    _samplingRate = (uint32_t)(P2(p+24)) * (1000*0x10000/0x62);
-    _keyOffset = P2(p+26);
-    _keyNote = *(uint8_t*)(p+28);
-    _samples = new signed char[_numSamples];
+    _id = static_cast<int>(P4(p+8));
+    _numSamples = static_cast<int>(P4(p+12));
+    _loopStart = static_cast<int>(P4(p+16));
+    _loopLength = static_cast<int>(P4(p+20));
+    _samplingRate = static_cast<int>(P2(p + 24));
+    _keyOffset = static_cast<int>(P2(p + 26));
+    _adjustedSamplingRate = (_samplingRate + _keyOffset) * (1000 * 0x10000 / 0x62);
+    _keyNote = static_cast<int>(*(p+28));
+    _samples = new signed char[_numSamples + 1]; // append 1 sample, in order to avoid buffer overflow in liner interpolation process
     for (int i = 0; i < _numSamples; i++) {
-        int n = p[32+i];
-        _samples[i] = (n >= 0x80)?(n & 0x7f):(-n);
+        int n = static_cast<int>(p[32+i]);
+        _samples[i] = (n >= 0x80) ? static_cast<signed char>((n & 0x7f)) : static_cast<signed char>(-n);
+    }
+    if (_loopStart >= _numSamples) {
+        fprintf(stderr, "TownsPcmSound::TownsPcmSound: too large loopStart.  loopStart zeroed.  loopStart=0x%08x, numSamples=0x%08x\n", _loopStart, _numSamples);
+        _loopStart = 0;
+    }
+    if (_loopLength > _numSamples - _loopStart) {
+        fprintf(stderr, "TownsPcmSound::TownsPcmSound: too large loopLength.  loop disabled.  loopStart=0x%08x, loopLength=0x%08x, numSamples=0x%08x\n", _loopStart, _loopLength, _numSamples);
+        _loopLength = 0;
+    }
+    if (_loopLength != 0 && _loopStart + _loopLength < _numSamples) {
+        _numSamples = _loopStart + _loopLength;
     }
     //cerr << this->describe() << '\n';
 }
@@ -193,13 +214,13 @@ TownsPcmEnvelope::TownsPcmEnvelope(uint8_t const *p)
     _state = _s_ready;
     _oldState = _s_ready;
     _currentLevel = 0;
-    _totalLevel = *(uint8_t*)(p+0);
-    _attackRate = *(uint8_t*)(p+1) * 10;
-    _decayRate = *(uint8_t*)(p+2) * 10;
-    _sustainLevel = *(uint8_t*)(p+3);
-    _sustainRate = *(uint8_t*)(p+4) * 20;
-    _releaseRate = *(uint8_t*)(p+5) * 10;
-    _rootKeyOffset = *(char*)(p+6);
+    _totalLevel = static_cast<int>(*(p+0));
+    _attackRate = static_cast<int>(*(p+1)) * 10;
+    _decayRate = static_cast<int>(*(p+2)) * 10;
+    _sustainLevel = static_cast<int>(*(p+3));
+    _sustainRate = static_cast<int>(*(p+4)) * 20;
+    _releaseRate = static_cast<int>(*(p+5)) * 10;
+    _rootKeyOffset = static_cast<int>(*(p+6));
     //cerr << this->describe() << '\n';
 }
 
@@ -339,8 +360,8 @@ TownsPcmInstrument::TownsPcmInstrument(uint8_t const *p)
         _name[n] = '\0';
     }
     for (int n = 0; n < _maxSplitNum; n++) {
-        _split[n] = P2(p+16+2*n);
-        _soundId[n] = P4(p+32+4*n);
+        _split[n] = static_cast<int>(P2(p+16+2*n));
+        _soundId[n] = static_cast<int>(P4(p+32+4*n));
         _sound[n] = nullptr;
         _envelope[n] = new TownsPcmEnvelope(p+64+8*n);
     }
@@ -466,15 +487,6 @@ void TownsFmEmulator_Operator::frequency(int freq)
             r = 63; // するべきなんだろうとは思うんだけど (赤p.207)
         }
     }
-#if 0
-    _attackRate = 0x80;
-    _attackRate *= powtbl[(r&3) << 7];
-    _attackRate <<= 16 + (r >> 2);
-    _attackRate >>= 1;
-    _attackRate /= 9; // r == 4 のとき、0-96db が 8970.24ms
-    //_attackRate /= 4; // r == 4 のとき、0-96db が 8970.24ms
-    //DB(("AR=%d->%d, 0-96[db]=%d[ms]\n", _specifiedAttackRate, r, (((int64_t)0x80<<31) * 1000) / _attackRate));
-#else
     {
         r = 63 - r;
         int64_t t;
@@ -489,10 +501,9 @@ void TownsFmEmulator_Operator::frequency(int freq)
             t *= 127 - _specifiedTotalLevel;
             t /= 127;
         }
-        _attackTime = t; // 1 秒 == (1 << 12)
+        _attackTime = static_cast<int>(t); // 1 秒 == (1 << 12)
         //DB(("AR=%d->%d, 0-96[db]=%d[ms]\n", _specifiedAttackRate, r, (int)((t*1000)>>12)));
     }
-#endif
 
     r = _specifiedDecayRate;
     if (r != 0) {
@@ -577,31 +588,25 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
         }
         break;
     case _s_decaying:
-#if 1
         _currentLevel += _decayRate / rate;
         if (_currentLevel >= _sustainLevel) {
             _currentLevel = _sustainLevel;
             _state = _s_sustaining;
         }
-#endif
         break;
     case _s_sustaining:
-#if 1
         _currentLevel += _sustainRate / rate;
         if (_currentLevel >= ((int64_t)0x7f << 31)) {
             _currentLevel = ((int64_t)0x7f << 31);
             _state = _s_ready;
         }
-#endif
         break;
     case _s_releasing:
-#if 1
         _currentLevel += _releaseRate / rate;
         if (_currentLevel >= ((int64_t)0x7f << 31)) {
             _currentLevel = ((int64_t)0x7f << 31);
             _state = _s_ready;
         }
-#endif
         break;
     default:
         // ここには来ないはず
@@ -639,15 +644,16 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
         }
     }
 
-    _lastOutput = output;
-    return output;
+    _lastOutput = static_cast<int>(output);
+    return static_cast<int>(output);
 }
 
 /* TownsFmEmulator */
 
 TownsFmEmulator::TownsFmEmulator()
 {
-    _control7 = 127;
+    _chn_volume = 127;
+    _expression = 127;
     _offVelocity = 0;
     _gateTime = 0;
     _note = 40;
@@ -666,11 +672,7 @@ TownsFmEmulator::~TownsFmEmulator()
 void TownsFmEmulator::velocity(int velo)
 {
     EUP_TownsEmulator_MonophonicAudioSynthesizer::velocity(velo);
-#if 0
-    int v = (velo * _control7) >> 7; // これだと精度良くないですね
-#else
-    int v = velo + (_control7 - 127) * 4;
-#endif
+    int v = velo + (_chn_volume - 127) * 4;
     bool iscarrier[8][4] = {
         { false, false, false,  true, }, /*0*/
         { false, false, false,  true, }, /*1*/
@@ -693,13 +695,68 @@ void TownsFmEmulator::velocity(int velo)
 void TownsFmEmulator::setControlParameter(int control, int value)
 {
     switch (control) {
+    case 0:
+        // Bank Select (for devices with more than 128 programs)
+        // base for "program change" commands
+        if (value > 0) {
+            fprintf(stderr, "warning: unsupported Bank Select: %d\n", value);
+            fflush(stderr);
+        }
+        break;
+
+    case 1:
+        // Modulation controls a vibrato effect (pitch, loudness, brighness)
+        if (value > 0) {
+            fprintf(stderr, "warning: unsupported Modulation: %d\n", value);
+            fflush(stderr);
+        }
+        break;
+
     case 7:
-        _control7 = value;
+        _chn_volume = value;
         this->velocity(this->velocity());
         break;
+
+    // panpot
     case 10:
-        // panpot
+        // Pan (coarse) 0-127
+    case 42:
+        // Pan (fine) 0-127
+        if (value < 0x20) {
+            //_enableL = 1;
+            //_enableR = 0;
+        }
+        else  if (value < 0x60) {
+            //_enableL = 1;
+            //_enableR = 1;
+        }
+        else {
+            //_enableL = 0;
+            //_enableR = 1;
+        }
         break;
+
+    case 11:
+        // Expression (coarse) controllers are for dynamics (i.e., volume). Thus, they work similarly to controllers for volume (e.g., 0x07).
+    case 43:
+        // Expression (fine) controllers are for dynamics (i.e., volume). Thus, they work similarly to controllers for volume (e.g., 0x07).
+        _expression = value;
+        this->velocity(this->velocity());
+
+        if (value != 127) {
+            fprintf(stderr, "warning: song uses unimplemented Expression control\n");
+            fflush(stderr);
+        }
+        break;
+
+    case 64:
+        // Hold (damper, sustain) pedal 1 (on/off) < 63 is off, >= 64 is on
+        if (value > 64) {
+            fprintf(stderr, "warning: use of unimplemented Sustain Pedal: %d\n", value);
+            fflush(stderr);
+        }
+        break;
+
     default:
         fprintf(stderr, "TownsFmEmulator::setControlParameter: unknown control %d, val=%d\n", control, value);
         fflush(stderr);
@@ -839,18 +896,29 @@ void TownsFmEmulator::recalculateFrequency()
     // どういう仕様なんだろうか?
     // と思ったら、なんと、これ (↓) が正解らしい。
     int64_t basefreq = frequencyTable[_note];
+    double basefreq_double = static_cast<double>(basefreq);
+    int lcl_frequencyOffs = _frequencyOffs;
+    if (lcl_frequencyOffs > 0x4000) {
+        lcl_frequencyOffs = 0x4000;
+    }
+    if (lcl_frequencyOffs < 0x0000) {
+        lcl_frequencyOffs = 0x0000;
+    }
+    double Offs_double = pow(2.0, (static_cast<double>(lcl_frequencyOffs - 8192/*0x2000*/) / static_cast<double>(8192/*0x2000*/)));
+    basefreq_double *= Offs_double;
+
     int cfreq = frequencyTable[_note - (_note % 12)];
     int oct = _note / 12;
-    int fnum = (basefreq << 13) / cfreq; // OPL の fnum と同じようなもの。
-    fnum += _frequencyOffs - 0x2000;
-    if (fnum < 0x2000) {
-        fnum += 0x2000;
-        oct--;
-    }
-    if (fnum >= 0x4000) {
-        fnum -= 0x2000;
-        oct++;
-    }
+    int fnum = static_cast<int>((basefreq << 13) / static_cast<int64_t>(cfreq)); // OPL の fnum と同じようなもの。
+    //fnum += _frequencyOffs - 0x2000;
+    //if (fnum < 0x2000) {
+    //    fnum += 0x2000;
+    //    oct--;
+    //}
+    //if (fnum >= 0x4000) {
+    //    fnum -= 0x2000;
+    //    oct++;
+    //}
 
     // _frequency は最終的にバイアス 256*1024 倍
     _frequency = (frequencyTable[oct*12] * (int64_t)fnum) >> (13 - 10);
@@ -865,7 +933,8 @@ void TownsFmEmulator::recalculateFrequency()
 
 TownsPcmEmulator::TownsPcmEmulator()
 {
-    _control7 = 127;
+    _chn_volume = 127;
+    _expression = 127;
     this->velocity(0);
     _gateTime = 0;
     _frequencyOffs = 0x2000;
@@ -886,21 +955,26 @@ void TownsPcmEmulator::setControlParameter(int control, int value)
         // base for "program change" commands
         if (value > 0) {
             fprintf(stderr, "warning: unsupported Bank Select: %d\n", value);
+            fflush(stderr);
         }
         break;
 
     case 1:
         // Modulation controls a vibrato effect (pitch, loudness, brighness)
         if (value > 0) {
-            fprintf(stderr, "warning: use of unimplemented PCM Modulation: %d\n", value);
+            fprintf(stderr, "warning: unsupported Modulation: %d\n", value);
+            fflush(stderr);
         }
         break;
 
     case 7:
-        _control7 = value;
+        _chn_volume = value;
         break;
 
     case 10:
+        // Pan (coarse) 0-127
+    case 42:
+        // Pan (fine) 0-127
         // panpot - rf5c68 seems to have an 8-bit pan register where low-nibble controls output to left
         // speaker and high-nibble the right..
         //value -= 0x40;
@@ -909,23 +983,28 @@ void TownsPcmEmulator::setControlParameter(int control, int value)
         break;
 
     case 11:
-        // MIDI: Expression  - testcase; Passionate Ocean
-        // Expression is a "percentage" of volume (CC7).
-        //_expression= value;
-        //if (value != 127) {
-        //    fprintf(stderr, "warning: song uses unimplemented Expression control\n");
-        //}
+        // Expression (coarse) controllers are for dynamics (i.e., volume). Thus, they work similarly to controllers for volume (e.g., 0x07).
+    case 43:
+        // Expression (fine) controllers are for dynamics (i.e., volume). Thus, they work similarly to controllers for volume (e.g., 0x07).
+        _expression = value;
+        this->velocity(this->velocity());
+
+        if (value != 127) {
+            fprintf(stderr, "warning: song uses unimplemented Expression control\n");
+            fflush(stderr);
+        }
         break;
 
     case 64:
-        // Sustain Pedal (on/off) testcase: Bach: Aria on G String"
-        if (value > 0) {
-            fprintf(stderr, "warning: use of unimplemented PCM Sustain Pedal: %d\n", value);
+        // Hold (damper, sustain) pedal 1 (on/off) < 63 is off, >= 64 is on
+        if (value > 64) {
+            fprintf(stderr, "warning: use of unimplemented Sustain Pedal: %d\n", value);
+            fflush(stderr);
         }
         break;
 
     default:
-        fprintf(stderr, "TownsFmEmulator::setControlParameter: unknown control %d, val=%d\n", control, value);
+        fprintf(stderr, "TownsPcmEmulator::setControlParameter: unknown control %d, val=%d\n", control, value);
         fflush(stderr);
         break;
     };
@@ -971,13 +1050,13 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         int64_t ps = frequencyTable[_note];
         ps *= powtbl[_frequencyOffs>>4];
         ps /= frequencyTable[_currentSound->keyNote() - _currentEnvelope->rootKeyOffset()];
-        ps *= _currentSound->samplingRate();
+        ps *= _currentSound->adjustedSamplingRate();
         ps /= this->rate();
         ps >>= 16;
-        phaseStep = ps;
+        phaseStep = static_cast<uint32_t>(ps);
     }
-    int loopLength = _currentSound->loopLength() << 16; // あらかじめ計算して
-    int numSamples = _currentSound->numSamples() << 16; // おくのは危険だぞ
+    uint32_t loopLength = _currentSound->loopLength() << 16; // あらかじめ計算して
+    uint32_t numSamples = _currentSound->numSamples() << 16; // おくのは危険だぞ
     signed char const *soundSamples = _currentSound->samples();
     for (int i = 0; i < buflen; i++) {
         if (loopLength > 0)
@@ -996,11 +1075,11 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         // 線型補間する。
         int output;
         {
-            uint32_t phase0 = _phase;
-            uint32_t phase1 = _phase + 0x10000;
-            if (phase1 >= numSamples) {
+            uint32_t phase0 = static_cast<uint32_t>(_phase);
+            uint32_t phase1 = static_cast<uint32_t>(_phase) + 0x10000;
+            if (phase1 >= static_cast<uint32_t>(numSamples)) {
                 // it's safe even if loopLength == 0, because soundSamples[] is extended by 1 and filled with 0 (see TownsPcmSound::TownsPcmSound).
-                phase1 -= loopLength;
+                phase1 -= static_cast<uint32_t>(loopLength);
             }
             phase0 >>= 16;
             phase1 >>= 16;
@@ -1016,7 +1095,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         output <<= 1;
         output *= _currentEnvelope->nextTick();
         output >>= 7;
-        output *= _control7; // 正しい減衰量は?
+        output *= _chn_volume; // 正しい減衰量は?
         output >>= 7;
         // FM との音量バランスを取る。
         output *= 185; // くらい?  半端ですねぇ。
@@ -1184,7 +1263,7 @@ void EUP_TownsEmulator::assignPcmDeviceToChannel(int channel)
 {
     CHECK_CHANNEL_NUM("EUP_TownsEmulator::assignPcmDeviceToChannel", channel);
 
-	if (channel >= _maxChannelNum) return;	// original impl created out of bounds write to _channel[]
+    if (channel >= _maxChannelNum) return; // original impl created out of bounds write to _channel[]
 
     EUP_TownsEmulator_MonophonicAudioSynthesizer *dev = new TownsPcmEmulator;
     dev->rate(_rate);
@@ -1273,7 +1352,7 @@ void EUP_TownsEmulator::nextTick()
 
     for (int i = 0; i < _maxChannelNum; i++) {
         if (_enabled[i]) {
-            _channel[i]->nextTick(buf0, buflen);
+            _channel[i]->nextTick(buf0, static_cast<int>(buflen));
         }
     }
 
@@ -1308,7 +1387,7 @@ void EUP_TownsEmulator::nextTick()
     if (true == this->output2File_read()) {
         fwrite(buf1, sizeof(buf1[0]), buflen, _ostr);
 
-        pcm.count += buflen;
+        pcm.count += static_cast<int>(buflen);
     }
 
 #if defined ( _MSC_VER )
@@ -1317,7 +1396,8 @@ void EUP_TownsEmulator::nextTick()
 #if defined ( __MINGW32__ )
     delete buf1;
 #endif // __MINGW32__
-    } else {
+    }
+    else {
         if (true == this->output2File_read()) {
 #if defined ( _MSC_VER )
             u_char *buf1 = new u_char[buflen * 2];
@@ -1345,18 +1425,18 @@ void EUP_TownsEmulator::nextTick()
                 d >>= 10; // いいかげんだなぁ
                 d ^= (_outputSampleUnsigned) ? 0x8000 : 0;
                 if (_outputSampleLSBFirst) {
-                    buf1[i*2+1] = ((d >> 8) & 0xff);
-                    buf1[i*2+0] = ((d >> 0) & 0xff);
+                    buf1[(i * 2) + 0] = ((d >> 0) & 0xff);
+                    buf1[(i * 2) + 1] = ((d >> 8) & 0xff);
                 }
                 else {
-                    buf1[i*2+0] = ((d >> 8) & 0xff);
-                    buf1[i*2+1] = ((d >> 0) & 0xff);
+                    buf1[(i * 2) + 0] = ((d >> 8) & 0xff);
+                    buf1[(i * 2) + 1] = ((d >> 0) & 0xff);
                 }
             }
 
             fwrite(buf1, sizeof(buf1[0])*2, buflen, _ostr);
 
-            pcm.count += buflen;
+            pcm.count += static_cast<int>(buflen);
 
 #if defined ( _MSC_VER )
             delete buf1;
@@ -1364,7 +1444,8 @@ void EUP_TownsEmulator::nextTick()
 #if defined ( __MINGW32__ )
             delete buf1;
 #endif // __MINGW32__
-        } else {
+        }
+        else {
             while (true) { /* infinite loop waiting for empty space in buffer */
                 // there's enough space for buflen samples
                 if (((pcm.read_pos < pcm.write_pos) && (buflen <= (streamAudioBufferSamples - pcm.write_pos + pcm.read_pos)))
@@ -1389,7 +1470,8 @@ void EUP_TownsEmulator::nextTick()
                             /* right channel sample second place */
                             /*pcm.write_pos++;*/
                         }
-                    } else {
+                    }
+                    else {
                         for (int i = 0; i < buflen; i++) {
                             if (streamAudioBufferSamples <= renderData) {
                                 renderData = 0;
@@ -1408,9 +1490,10 @@ void EUP_TownsEmulator::nextTick()
                     }
 
                     pcm.write_pos = renderData;
-		    break; /* leave infinite loop waiting for empty space in buffer */
+                    break; /* leave infinite loop waiting for empty space in buffer */
                 // there's not space in buffer, please wait
-                } else {
+                }
+                else {
                     SDL_Delay(1);
                 }
             }
@@ -1455,7 +1538,7 @@ void EUP_TownsEmulator::programChange(int channel, int num)
         fminst = _fmInstrument[num];
     }
     if (0 <= num && num < _maxPcmInstrumentNum) {
-        pcminst = (uint8_t*)_pcmInstrument[num];
+        pcminst = reinterpret_cast<uint8_t *>(_pcmInstrument[num]);
     }
 
     _channel[channel]->setInstrumentParameter(fminst, pcminst);

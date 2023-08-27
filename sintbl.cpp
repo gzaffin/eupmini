@@ -3079,7 +3079,7 @@ int const powtbl[] = {
     131072,
 };
 
-int const frequencyTable[] = {
+int const frequencyTable[] = { /* https://pages.mtu.edu/~suits/notefreqs.html Frequencies for equal-tempered scale, A4 = 440 Hz */
       2092,
       2217,
       2349,

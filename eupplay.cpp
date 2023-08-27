@@ -352,7 +352,7 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
                 eupInfo.pcm_midi_ch[trk] = eupHeader.pcm_midi_ch[trk];
 
                 device->assignPcmDeviceToChannel(eupInfo.pcm_midi_ch[trk]);
-                fprintf(stderr, "eupHeader.pcm_midi_ch[%d] is %d.\n", trk, eupHeader.pcm_midi_ch[trk]);
+                fprintf(stderr, "eupInfo.pcm_midi_ch[%d] is %d.\n", trk, eupInfo.pcm_midi_ch[trk]);
             }
             eupInfo.signature = eupHeader.signature;
             //eupInfo.first_tempo = eupHeader.first_tempo;

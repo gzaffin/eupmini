@@ -139,6 +139,36 @@ int EUPPlayer_cmd_dx(int cmd, EUPPlayer *pl)
 int EUPPlayer_cmd_ex(int cmd, EUPPlayer *pl)
 {
     /* ピッチベンド */
+    /*
+  6.9 Pitch bend.
+
+
+    ■ U: Pitch bend
+
+    Form 1:
+    ┌───────────────────────────────┐
+    │u<bend>                        │
+    └───────────────────────────────┘
+    Parameter.
+        <Bend> -8192 to +8191
+
+    Description.
+    This command allows subtle changes in pitch.
+    For the built-in sound source, moving the pitch bend fully (-8192 to +8191) changes the pitch by two octaves.
+
+    Format 2:
+    ┌───────────────────────────────┐
+    │u%<ratio>[,<pitch difference>] │
+    └───────────────────────────────┘
+    [Parameters].
+        <Ratio> -10000 to +10000 (in percentages)
+        <Pitch difference> -96 to +96 (semitone units)
+
+    [Explanation]
+    The pitch bend is determined by the ratio of the pitch bend width between pitches.
+    The pitch bend width between each interval must be preset by the note assignment in the control line.
+    If <Ratio> < 0>, the pitch bend width must be "<Pitch Difference> > 0"; if <Ratio> > 0, the pitch bend width must be "<Pitch Difference> < 0".
+    */
     WAIT4NEXTSTEP;
     DB_PROCESSING("Pitch bend");
 
@@ -154,7 +184,51 @@ int EUPPlayer_cmd_f0(int cmd, EUPPlayer *pl)
 {
     /* エクスクルーシブステータス */
     DB_PROCESSING("Exclusive status");
-    return EUPPlayer_cmd_NOTSUPPORTED(cmd, pl);
+    //return EUPPlayer_cmd_NOTSUPPORTED(cmd, pl);
+    int SysEx_flag = 1;
+    while (1 == SysEx_flag) {
+        printf("0x%.2x 0x%.2x 0x%.2x 0x%.2x 0x%.2x 0x%.2x", \
+            (pl->_curP)[0], \
+            (pl->_curP)[1], \
+            (pl->_curP)[2], \
+            (pl->_curP)[3], \
+            (pl->_curP)[4], \
+            (pl->_curP)[5]);
+        if ((0xf7 == (pl->_curP)[1]) \
+            || (0xf7 == (pl->_curP)[2]) \
+            || (0xf7 == (pl->_curP)[3]) \
+            || (0xf7 == (pl->_curP)[4]) \
+            || (0xf7 == (pl->_curP)[5])) {
+            if (0xf0 == (pl->_curP)[0]) {
+                printf(" 11110000 System Common Msg System Exclusive Status with $F7 End of Exclusive.");
+            }
+            else {
+                printf(" XXXXXXXX System Common Msg System Exclusive Data with $F7 End of Exclusive.");
+            }
+            SysEx_flag = 0;
+        }
+        else if ((0xf7 == (pl->_curP)[0]) \
+            && (0xff == (pl->_curP)[1]) \
+            && (0xff == (pl->_curP)[2]) \
+            && (0xff == (pl->_curP)[3]) \
+            && (0xff == (pl->_curP)[4]) \
+            && (0xff == (pl->_curP)[5])) {
+            printf(" 11110111 System Common Msg System Exclusive End of Exclusive.");
+            SysEx_flag = 0;
+        }
+        else {
+            if (0xf0 == (pl->_curP)[0]) {
+                printf(" 11110000 System Common Msg System Exclusive Status.");
+            }
+            else {
+                printf(" XXXXXXXX System Common Msg System Exclusive Data.");
+            }
+        }
+        printf("\n");
+        std::fflush(stdout);
+        pl->_curP += 6;
+    }
+    return 0;
 }
 
 int EUPPlayer_cmd_f1(int cmd, EUPPlayer *pl)

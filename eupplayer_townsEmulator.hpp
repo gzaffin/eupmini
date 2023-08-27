@@ -124,7 +124,8 @@ public:
 class TownsFmEmulator : public EUP_TownsEmulator_MonophonicAudioSynthesizer {
     enum { _numOfOperators = 4 };
     TownsFmEmulator_Operator *_opr;
-    int _control7;
+    int _chn_volume;
+    int _expression;
     int _gateTime;
     int _offVelocity;
     int _note;
@@ -148,7 +149,8 @@ public:
 };
 
 class TownsPcmEmulator : public EUP_TownsEmulator_MonophonicAudioSynthesizer {
-    int _control7;
+    int _chn_volume;
+    int _expression;
     int _envTick;
     int _currentLevel;
     int _gateTime;
