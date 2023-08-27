@@ -13,8 +13,8 @@ Following [chiptune create ROPCHIPTUNE LABORATORY 3.00](http://rophon.music.cooc
 Also reference about EUPHONY is [Revised 3rd edition FM TOWNS Technical Data Book](https://archive.org/details/3FmTowns/mode/2up) @ 18 MIDI manager BIOS p.605 . 18.4 About MIDI EUPHONY p.607 . 18.4.3 EUP File Format p.609 .  
 
 Improvements are driven by looking into wothke's [webEuphony WebAudio plugin of Eupony](https://bitbucket.org/wothke/webeuphony/src/master/) code,
-and tjhayasaka, id est Tomoaki Hayasaka, [eupplayer](https://github.com/tjhayasaka/eupplayer) code.
-Thank You, Juergen Wothke !!
+and tjhayasaka's, id est Tomoaki Hayasaka, [eupplayer](https://github.com/tjhayasaka/eupplayer) code.  
+Thank You, Juergen Wothke !!  
 Thank You, Tomoaki Hayasaka !!  
 
 Copyright
