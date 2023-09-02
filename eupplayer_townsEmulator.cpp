@@ -818,7 +818,7 @@ void TownsFmEmulator::nextTick(int *outbuf, int buflen)
         case 1:
             d1 = _opr[0].nextTick(this->rate(), 0);
             d2 = _opr[1].nextTick(this->rate(), 0);
-            d3 = _opr[2].nextTick(this->rate(), d1+d2);
+            d3 = _opr[2].nextTick(this->rate(), d1 + d2);
             d4 = _opr[3].nextTick(this->rate(), d3);
             d = d4;
             break;
@@ -826,14 +826,14 @@ void TownsFmEmulator::nextTick(int *outbuf, int buflen)
             d1 = _opr[0].nextTick(this->rate(), 0);
             d2 = _opr[1].nextTick(this->rate(), 0);
             d3 = _opr[2].nextTick(this->rate(), d2);
-            d4 = _opr[3].nextTick(this->rate(), d1+d3);
+            d4 = _opr[3].nextTick(this->rate(), d1 + d3);
             d = d4;
             break;
         case 3:
             d1 = _opr[0].nextTick(this->rate(), 0);
             d2 = _opr[1].nextTick(this->rate(), d1);
             d3 = _opr[2].nextTick(this->rate(), 0);
-            d4 = _opr[3].nextTick(this->rate(), d2+d3);
+            d4 = _opr[3].nextTick(this->rate(), d2 + d3);
             d = d4;
             break;
         case 4:
@@ -868,7 +868,14 @@ void TownsFmEmulator::nextTick(int *outbuf, int buflen)
             break;
         };
 
-        outbuf[i] += d;
+        if (2 == streamAudioChannelsNum) {
+            int j = 2 * i;
+            outbuf[j++] += d;
+            outbuf[j] += d;
+        }
+        else /*(1 == streamAudioChannelsNum)*/ {
+            outbuf[i] += d;
+        }
     }
 }
 
@@ -1100,7 +1107,15 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         // FM との音量バランスを取る。
         output *= 185; // くらい?  半端ですねぇ。
         output >>= 8;
-        outbuf[i] += output;
+        if (2 == streamAudioChannelsNum) {
+            int j = 2 * i;
+            outbuf[j++] += output;
+            outbuf[j] += output;
+        }
+        else /*(1 == streamAudioChannelsNum)*/ {
+            outbuf[i] += output;
+        }
+
         _phase += phaseStep;
     }
 }
@@ -1221,6 +1236,7 @@ EUP_TownsEmulator::EUP_TownsEmulator()
     }
     this->outputSampleUnsigned(true);
     this->outputSampleSize(1);
+    this->outputSampleChannels(1);
     this->outputSampleLSBFirst(true);
     this->rate(8000);
     std::memset(&_fmInstrumentData[0], 0, sizeof(_fmInstrumentData));
@@ -1329,7 +1345,7 @@ void EUP_TownsEmulator::nextTick()
     buflen /= 1000 * 1012; // 1010 から 1015 くらいですね、うちでは。曲によるけど。
     buflen++;
 #if defined ( _MSC_VER )
-    int *buf0 = new int[buflen];
+    int *buf0 = new int[buflen * _outputSampleChannels];
     if (nullptr == buf0) {
         fprintf(stderr, "heap allocation problem.\n");
         fflush(stderr);
@@ -1348,7 +1364,7 @@ void EUP_TownsEmulator::nextTick()
     int buf0[buflen];
 #endif // __GNUC__
 
-    memset(buf0, 0, sizeof(buf0[0]) * buflen);
+    memset(buf0, 0, sizeof(buf0[0]) * buflen * _outputSampleChannels);
 
     for (int i = 0; i < _maxChannelNum; i++) {
         if (_enabled[i]) {
@@ -1356,51 +1372,10 @@ void EUP_TownsEmulator::nextTick()
         }
     }
 
-    if (_outputSampleSize == 1) {
+    if (1 == _outputSampleSize) {
+        if ((nullptr != this->outputStream_get()) && (true == this->output2File_read())) {
 #if defined ( _MSC_VER )
-        u_char *buf1 = new u_char[buflen];
-        if (nullptr == buf1) {
-            fprintf(stderr, "heap allocation problem.\n");
-            fflush(stderr);
-            exit(0);
-        }
-#endif // _MSC_VER
-#if defined ( __MINGW32__ )
-        u_char *buf1 = new u_char[buflen];
-        if (nullptr == buf1) {
-            fprintf(stderr, "heap allocation problem.\n");
-            fflush(stderr);
-            exit(0);
-        }
-#endif // __MINGW32__
-#if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
-    u_char buf1[buflen];
-#endif // __GNUC__
-
-    for (int i = 0; i < buflen; i++) {
-        int d = buf0[i];
-        d *= this->volume();
-        d >>= 10; // いいかげんだなぁ
-        d ^= (_outputSampleUnsigned) ? 0x8000 : 0;
-        buf1[i] = ((d >> 8) & 0xff);
-    }
-    if (true == this->output2File_read()) {
-        fwrite(buf1, sizeof(buf1[0]), buflen, _ostr);
-
-        pcm.count += static_cast<int>(buflen);
-    }
-
-#if defined ( _MSC_VER )
-    delete buf1;
-#endif // _MSC_VER
-#if defined ( __MINGW32__ )
-    delete buf1;
-#endif // __MINGW32__
-    }
-    else {
-        if (true == this->output2File_read()) {
-#if defined ( _MSC_VER )
-            u_char *buf1 = new u_char[buflen * 2];
+            int8_t* buf1 = new int8_t[buflen * _outputSampleChannels];
             if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);
@@ -1408,7 +1383,7 @@ void EUP_TownsEmulator::nextTick()
             }
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-            u_char *buf1 = new u_char[buflen * 2];
+            int8_t* buf1 = new int8_t[buflen * _outputSampleChannels];
             if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);
@@ -1416,25 +1391,17 @@ void EUP_TownsEmulator::nextTick()
             }
 #endif // __MINGW32__
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
-            u_char buf1[buflen * 2];
+            int8_t buf1[buflen * _outputSampleChannels];
 #endif // __GNUC__
 
-            for (int i = 0; i < buflen; i++) {
+            for (int i = 0; i < buflen * _outputSampleChannels; i++) {
                 int d = buf0[i];
                 d *= this->volume();
                 d >>= 10; // いいかげんだなぁ
-                d ^= (_outputSampleUnsigned) ? 0x8000 : 0;
-                if (_outputSampleLSBFirst) {
-                    buf1[(i * 2) + 0] = ((d >> 0) & 0xff);
-                    buf1[(i * 2) + 1] = ((d >> 8) & 0xff);
-                }
-                else {
-                    buf1[(i * 2) + 0] = ((d >> 8) & 0xff);
-                    buf1[(i * 2) + 1] = ((d >> 0) & 0xff);
-                }
+                d ^= 0x8000;
+                buf1[i] = ((d >> 8) & 0xff);
             }
-
-            fwrite(buf1, sizeof(buf1[0])*2, buflen, _ostr);
+            fwrite(buf1, sizeof(buf1[0]), buflen * _outputSampleChannels, _ostr);
 
             pcm.count += static_cast<int>(buflen);
 
@@ -1448,44 +1415,302 @@ void EUP_TownsEmulator::nextTick()
         else {
             while (true) { /* infinite loop waiting for empty space in buffer */
                 // there's enough space for buflen samples
-                if (((pcm.read_pos < pcm.write_pos) && (buflen <= (streamAudioBufferSamples - pcm.write_pos + pcm.read_pos)))
+                if (((pcm.read_pos < pcm.write_pos) && (buflen <= (streamAudioSamplesBuffer - pcm.write_pos + pcm.read_pos)))
                     ||
                     ((pcm.read_pos >= pcm.write_pos) && (buflen <= (pcm.read_pos - pcm.write_pos)))) {
                     int renderData = pcm.write_pos;
-                    int16_t * renderBuffer =(int16_t *) pcm.buffer; 
 
-                    if (true == _outputSampleLSBFirst) {
-                        for (int i = 0; i < buflen; i++) {
-                            if (streamAudioBufferSamples <= renderData) {
-                                renderData = 0;
+                    if (false == _outputSampleUnsigned) {
+                        int8_t* renderBuffer = reinterpret_cast<int8_t*>(pcm.buffer);
+
+                        if (2 == _outputSampleChannels) {
+                            for (int i = 0; i < buflen; i++) {
+                                if (streamAudioSamplesBuffer <= renderData) {
+                                    renderData = 0;
+                                }
+
+                                int dl = buf0[2 * i];
+                                dl *= this->volume();
+                                int8_t ddl = static_cast<int8_t>(dl >> 18); // いいかげんだなぁ
+                                renderBuffer[2 * renderData] = (127 < ddl) ? 127 : ((-128 > ddl) ? -128 : ddl);
+                                int dr = buf0[(2 * i) + 1];
+                                dr *= this->volume();
+                                int8_t ddr = static_cast<int8_t>(dr >> 18); // いいかげんだなぁ
+                                renderBuffer[(2 * renderData) + 1] = (127 < ddr) ? 127 : ((-128 > ddr) ? -128 : ddr);
+
+                                renderData++;
                             }
 
-                            int d = buf0[i];
-                            d *= this->volume();
-                            int16_t dd = (int16_t)(d >> 10); // いいかげんだなぁ
-                            renderBuffer[renderData++] = dd;
-
                             /* left channel sample first place */
-                            /*renderData++;*/
                             /* right channel sample second place */
-                            /*pcm.write_pos++;*/
+                        }
+                        else /*(1 == _outputSampleChannels)*/ {
+                            for (int i = 0; i < buflen; i++) {
+                                if (streamAudioSamplesBuffer <= renderData) {
+                                    renderData = 0;
+                                }
+
+                                int d = buf0[i];
+                                d *= this->volume();
+                                int8_t dd = static_cast<int8_t>(d >> 18); // いいかげんだなぁ
+                                renderBuffer[renderData++] = (127 < dd) ? 127 : ((-128 > dd) ? -128 : dd);
+                            }
                         }
                     }
-                    else {
-                        for (int i = 0; i < buflen; i++) {
-                            if (streamAudioBufferSamples <= renderData) {
-                                renderData = 0;
+                    else /*(true == _outputSampleUnsigned)*/ {
+                        uint8_t* renderBuffer = reinterpret_cast<uint8_t*>(pcm.buffer);
+
+                        if (2 == _outputSampleChannels) {
+                            for (int i = 0; i < buflen; i++) {
+                                if (streamAudioSamplesBuffer <= renderData) {
+                                    renderData = 0;
+                                }
+
+                                int dl = buf0[2 * i];
+                                dl *= this->volume();
+                                dl >>= 10; // いいかげんだなぁ
+                                dl ^= 0x8000;
+                                renderBuffer[2 * renderData] = ((dl >> 8) & 0xff);
+                                int dr = buf0[(2 * i) + 1];
+                                dr *= this->volume();
+                                dl >>= 10; // いいかげんだなぁ
+                                dl ^= 0x8000;
+                                renderBuffer[(2 * renderData) + 1] = ((dr >> 8) & 0xff);
+
+                                renderData++;
                             }
 
-                            int d = buf0[i];
-                            d *= this->volume();
-                            int16_t dd = (int16_t)(((d >> 18) & 0xff) + ((d >> 2) & 0xff00)); // ������������ʤ�
-                            renderBuffer[renderData++] = dd;
-
                             /* left channel sample first place */
-                            /*renderData++;*/
                             /* right channel sample second place */
-                            /*pcm.write_pos++;*/
+                        }
+                        else /*(1 == _outputSampleChannels)*/ {
+                            for (int i = 0; i < buflen; i++) {
+                                if (streamAudioSamplesBuffer <= renderData) {
+                                    renderData = 0;
+                                }
+
+                                int d = buf0[i];
+                                d *= this->volume();
+                                d >>= 10; // いいかげんだなぁ
+                                d ^= 0x8000;
+                                renderBuffer[renderData++] = ((d >> 8) & 0xff);
+                            }
+                        }
+                    }
+                    pcm.write_pos = renderData;
+                    break; /* leave infinite loop waiting for empty space in buffer */
+                    // there's not space in buffer, please wait
+                }
+                else {
+                    SDL_Delay(1);
+                }
+            }
+        }
+    }
+    else /*(2 == _outputSampleSize)*/ {
+        if ( (nullptr != this->outputStream_get()) && (true == this->output2File_read()) ) {
+#if defined ( _MSC_VER )
+            int16_t *buf1 = new int16_t[buflen * _outputSampleChannels];
+            if (nullptr == buf1) {
+                fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
+                exit(0);
+            }
+#endif // _MSC_VER
+#if defined ( __MINGW32__ )
+            int16_t*buf1 = new int16_t[buflen * _outputSampleChannels];
+            if (nullptr == buf1) {
+                fprintf(stderr, "heap allocation problem.\n");
+                fflush(stderr);
+                exit(0);
+            }
+#endif // __MINGW32__
+#if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
+            int16_t buf1[buflen * 2];
+#endif // __GNUC__
+
+            for (int i = 0; i < buflen * _outputSampleChannels; i++) {
+                int d = buf0[i];
+                d *= this->volume();
+                d >>= 10; // いいかげんだなぁ
+                buf1[i] = (32767 < d) ? 32767 : ((-32768 > d) ? -32768 : d);
+            }
+
+            fwrite(buf1, sizeof(buf1[0]), buflen * _outputSampleChannels, _ostr);
+
+            pcm.count += static_cast<int>(buflen);
+
+#if defined ( _MSC_VER )
+            delete buf1;
+#endif // _MSC_VER
+#if defined ( __MINGW32__ )
+            delete buf1;
+#endif // __MINGW32__
+        }
+        else {
+            while (true) { /* infinite loop waiting for empty space in buffer */
+                // there's enough space for buflen samples
+                if (((pcm.read_pos < pcm.write_pos) && (buflen <= (streamAudioSamplesBuffer - pcm.write_pos + pcm.read_pos)))
+                    ||
+                    ((pcm.read_pos >= pcm.write_pos) && (buflen <= (pcm.read_pos - pcm.write_pos)))) {
+                    int renderData = pcm.write_pos;
+
+                    if (true == _outputSampleLSBFirst) {
+                        if (false == _outputSampleUnsigned) {
+                            int16_t * renderBuffer = pcm.buffer;
+
+                            if (2 == _outputSampleChannels) {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int dl = buf0[2 * i];
+                                    dl *= this->volume();
+                                    int16_t ddl = static_cast<int16_t>(dl >> 10); // いいかげんだなぁ
+                                    renderBuffer[2 * renderData] = (32767 < ddl) ? 32767 : ((-32768 > ddl) ? -32768 : ddl);
+                                    int dr = buf0[(2 * i) + 1];
+                                    dr *= this->volume();
+                                    int16_t ddr = static_cast<int16_t>(dr >> 10); // いいかげんだなぁ
+                                    renderBuffer[(2 * renderData) + 1] = (32767 < ddr) ? 32767 : ((-32768 > ddr) ? -32768 : ddr);
+
+                                    renderData++;
+                                }
+
+                                /* left channel sample first place */
+                                /* right channel sample second place */
+                            }
+                            else /*(1 == _outputSampleChannels)*/ {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int d = buf0[i];
+                                    d *= this->volume();
+                                    int8_t dd = static_cast<int8_t>(d >> 10); // いいかげんだなぁ
+                                    renderBuffer[renderData++] = (32767 < dd) ? 32767 : ((-32768 > dd) ? -32768 : dd);
+                                }
+                            }
+                        }
+                        else /*(true == _outputSampleUnsigned)*/ {
+                            uint16_t* renderBuffer = reinterpret_cast<uint16_t*>(pcm.buffer);
+
+                            if (2 == _outputSampleChannels) {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int dl = buf0[2 * i];
+                                    dl *= this->volume();
+                                    dl >>= 10; // いいかげんだなぁ
+                                    renderBuffer[2 * renderData] = (dl & 0x7fff);
+                                    int dr = buf0[(2 * i) + 1];
+                                    dr *= this->volume();
+                                    dl >>= 10; // いいかげんだなぁ
+                                    renderBuffer[(2 * renderData) + 1] = (dr & 0x7fff);
+
+                                    renderData++;
+                                }
+
+                                /* left channel sample first place */
+                                /* right channel sample second place */
+                            }
+                            else /*(1 == _outputSampleChannels)*/ {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int d = buf0[i];
+                                    d *= this->volume();
+                                    d >>= 10; // いいかげんだなぁ
+                                    renderBuffer[renderData++] = (d & 0x7fff);
+                                }
+                            }
+                        }
+                    }
+                    else /*(false == _outputSampleLSBFirst)*/ {
+                        if (false == _outputSampleUnsigned) {
+                            int16_t* renderBuffer = pcm.buffer;
+
+                            if (2 == _outputSampleChannels) {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int dl = buf0[2 * i];
+                                    dl *= this->volume();
+                                    int16_t ddl = static_cast<int16_t>(dl >> 10); // いいかげんだなぁ
+                                    int16_t dddl = (32767 < ddl) ? 32767 : ((-32768 > ddl) ? -32768 : ddl);
+                                    renderBuffer[2 * renderData] = ((dddl >> 8) & 0xff) + ((dddl << 8) & 0xff00);
+                                    int dr = buf0[(2 * i) + 1];
+                                    dr *= this->volume();
+                                    int16_t ddr = static_cast<int16_t>(dr >> 10); // いいかげんだなぁ
+                                    int16_t dddr = (32767 < ddr) ? 32767 : ((-32768 > ddr) ? -32768 : ddr);
+                                    renderBuffer[(2 * renderData) + 1] = ((dddr >> 8) & 0xff) + ((dddr << 8) & 0xff00);
+
+                                    renderData++;
+                                }
+
+                                /* left channel sample first place */
+                                /* right channel sample second place */
+                            }
+                            else /*(1 == _outputSampleChannels)*/ {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int d = buf0[i];
+                                    d *= this->volume();
+                                    int16_t dd = static_cast<int16_t>(d >> 10); // いいかげんだなぁ
+                                    int16_t ddd = (32767 < dd) ? 32767 : ((-32768 > dd) ? -32768 : dd);
+                                    renderBuffer[renderData++] = ((ddd >> 8) & 0xff) + ((ddd << 8) & 0xff00);
+                                }
+                            }
+                        }
+                        else /*(true == _outputSampleUnsigned)*/ {
+                            uint16_t* renderBuffer = reinterpret_cast<uint16_t*>(pcm.buffer);
+
+                            if (2 == _outputSampleChannels) {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int dl = buf0[2 * i];
+                                    dl *= this->volume();
+                                    dl >>= 10; // いいかげんだなぁ
+                                    dl &= 0x7fff;
+                                    renderBuffer[2 * renderData] = ((dl >> 8) & 0xff) + ((dl << 8) & 0xff00);
+                                    int dr = buf0[(2 * i) + 1];
+                                    dr *= this->volume();
+                                    dl >>= 10; // いいかげんだなぁ
+                                    dr &= 0x7fff;
+                                    renderBuffer[(2 * renderData) + 1] = ((dr >> 8) & 0xff) + ((dr << 8) & 0xff00);
+
+                                    renderData++;
+                                }
+
+                                /* left channel sample first place */
+                                /* right channel sample second place */
+                            }
+                            else /*(1 == _outputSampleChannels)*/ {
+                                for (int i = 0; i < buflen; i++) {
+                                    if (streamAudioSamplesBuffer <= renderData) {
+                                        renderData = 0;
+                                    }
+
+                                    int d = buf0[i];
+                                    d *= this->volume();
+                                    d >>= 10; // いいかげんだなぁ
+                                    d &= 0x7fff;
+                                    renderBuffer[renderData++] = ((d >> 8) & 0xff) + ((d << 8) & 0xff00);
+                                }
+                            }
                         }
                     }
 

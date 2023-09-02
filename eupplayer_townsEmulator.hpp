@@ -24,15 +24,20 @@
  * global data
  *
  */
-const int streamAudioSampleOctectSize = 2;
-/* rate 44100 Hz stream */
-const int streamAudioRate = 44100;
-const int streamAudioSamplesBlock = 512;
-const int streamAudioChannelsNum = 1;
+const int streamAudioSampleOctectSize = 2; // it matches with int16_t buffer[] definition below
+
+const int streamAudioRate = 44100; // 44100 Hz rate stream
+const int streamAudioSamplesBlock = 512; // a Block counts 512 Samples
+const int streamAudioChannelsNum = 2; // 1 = monaural, 2 = stereophonic
 const int streamAudioSamplesBlockNum = 16;
+
+// buffer size definitions
+
+const int streamAudioSamplesBuffer = streamAudioSamplesBlock * streamAudioSamplesBlockNum;
 const int streamAudioChannelsSamplesBlock = streamAudioSamplesBlock * streamAudioChannelsNum;
-const int streamAudioBufferSamples = streamAudioChannelsSamplesBlock * streamAudioSamplesBlockNum;
-const int streamAudioBufferOctectsSize = streamAudioBufferSamples * streamAudioSampleOctectSize;
+const int streamAudioChannelsSamplesBuffer = streamAudioChannelsSamplesBlock * streamAudioSamplesBlockNum;
+
+//const int streamAudioBufferOctectsSize = streamAudioChannelsSamplesBuffer * streamAudioSampleOctectSize;
 const int streamBytesPerSecond = streamAudioRate * streamAudioChannelsNum * streamAudioSampleOctectSize;
 
 struct pcm_struct {
@@ -44,7 +49,7 @@ struct pcm_struct {
 
     int count;
 
-    uint8_t buffer[streamAudioBufferOctectsSize];
+    int16_t buffer[streamAudioChannelsSamplesBuffer];
 };
 extern struct pcm_struct pcm;
 
@@ -204,6 +209,7 @@ class EUP_TownsEmulator : public TownsAudioDevice {
     int _rate;
     bool _outputSampleUnsigned;
     int _outputSampleSize;
+    int _outputSampleChannels;
     bool _outputSampleLSBFirst;
     bool _output2File;
 public:
@@ -216,6 +222,10 @@ public:
     void outputSampleSize(int l)
     {
         _outputSampleSize = l;
+    }
+    void outputSampleChannels(int l)
+    {
+        _outputSampleChannels = l;
     }
     void outputSampleLSBFirst(bool l)
     {

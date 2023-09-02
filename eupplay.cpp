@@ -153,27 +153,48 @@ int getopt(int argc, char ** argv, const char * opts)
 /* 16 bit little endian sample stream -> sample size = 2 octects a.k.a. bytes */
 struct pcm_struct pcm;
 
+/*
+* param an application-specific parameter saved in the SDL_AudioSpec structure's userdata field
+* data a pointer to the audio data buffer filled in by SDL_AudioCallback()
+* len the length of data buffer in bytes
+* 
+* Stereo samples are stored in a LRLRLR ordering.
+*/
 static void audio_callback(void *param, Uint8 *data, int len)
 {
-    int i;
-    int readData2Buffer = pcm.read_pos;
-
-    int16_t * audio_buffer = (int16_t *)data;
-    int16_t * source_buffer = (int16_t *)pcm.buffer;
 
     if (true != pcm.on) {
         memset(data, 0, len);
         len = 0; /* statement cuts off following for loop */
     }
 
-    for(i = 0; i < len / 2; i++) {
-        if (streamAudioBufferSamples <= readData2Buffer) {
-            readData2Buffer = 0;
-        }
-        audio_buffer[i] = source_buffer[readData2Buffer++];
-    }
-
     if (len) {
+        int readData2Buffer = pcm.read_pos;
+        int octects_per_sample = streamAudioSampleOctectSize * streamAudioChannelsNum;
+        int i;
+        if (2 == streamAudioChannelsNum) {
+            int32_t* audio_buffer = reinterpret_cast<int32_t*>(data);
+            int32_t* source_buffer = reinterpret_cast<int32_t*>(pcm.buffer);
+
+            for (i = 0; i < len / octects_per_sample; i++) {
+                if (streamAudioSamplesBuffer <= readData2Buffer) {
+                    readData2Buffer = 0;
+                }
+                audio_buffer[i] = source_buffer[readData2Buffer++];
+            }
+        }
+        else /*if (1 == streamAudioChannelsNum)*/ {
+            int16_t* audio_buffer = reinterpret_cast<int16_t*>(data);
+            int16_t* source_buffer = pcm.buffer;
+
+            for (i = 0; i < len / octects_per_sample; i++) {
+                if (streamAudioSamplesBuffer <= readData2Buffer) {
+                    readData2Buffer = 0;
+                }
+                audio_buffer[i] = source_buffer[readData2Buffer++];
+            }
+        }
+
         pcm.count += i;
         pcm.read_pos = readData2Buffer;
     }
@@ -582,6 +603,7 @@ int main(int argc, char **argv)
     dev->outputSampleUnsigned(false);
     dev->outputSampleLSBFirst(true);
     dev->outputSampleSize(streamAudioSampleOctectSize); /* octects a.k.a. bytes */
+    dev->outputSampleChannels(streamAudioChannelsNum); /* 1 = monaural, 2 = stereophonic */
     dev->rate(streamAudioRate); /* Hz */
 
     /*fprintf(stderr, "sizeof(int16_t) = %d\n", (int)sizeof(int16_t));*/
@@ -774,6 +796,7 @@ int main(int argc, char **argv)
         }
     }
 
+    pcm.on = false;
     /* Stop the callback function playing the audio chunk */
     SDL_PauseAudio(SDL_TRUE);
 
