@@ -1,18 +1,18 @@
 # eupmini  
 Performance music driver EUPHONY (Extension ".EUP") format player using Simple DirectMedia Layer (SDL) version 2.x .  
 
-This project is not started from scratch, in the begining it was coded for GNU/Linux, then Windows o.s. binary version came along made by Mr.anonymous K., Mr.Sen and others (link ref. Lost and Found project).  
+This project is not started from scratch, in the begining it was coded for GNU/Linux, then Windows o.s. binary version came along made by Mr.anonymous K., Mr.Sen and others.  
 
 EUPHONY format music data was broadly used with past years favourite machine Fujitsu FM TOWNS.
 EUPHONY is supported by FUJITSU FBASIC386. See [FUJITSU FM TOWNS F BASIC 386 V 2.1 reference](https://archive.org/details/FUJITSUFMTOWNSFBASIC386V2.11992_201809/page/n103/mode/2up) @ 8 . Music/Sound . p.85 8.1 Music performance . p.86 8.2 Tone data . p.87 8.3 MML . p.90 .  
 
 HEat-Oh! is the first EUP creation software and text editor that was published in FMTOWNS magazine. HEat-Oh! is free software (= freeware) developed by TaroPYON (now taro), the name stands for "High EUP active tool".
 It is a tool for MML compiling and creating of .EUP format file, but, because of its characteristics, it acts also as a powerful text editor.
-Following [chiptune create ROPCHIPTUNE LABORATORY 3.00](http://rophon.music.coocan.jp/chiptune.htm) DOCUMENTATION about [5. using Unz emulator for editing and compiling EUPHONY MML with HEat-Oh!](http://rophon.music.coocan.jp/chiptune/UnzMMLcomp.pdf), after installing TaroPYON HEat with the emulator, a complete definition of MML for 386|High-EUP compiler can be retrieved, here added as Shift-JIS encoded txt file HE386.TXT .
+Following [chiptune create ROPCHIPTUNE LABORATORY 3.00](http://rophon.music.coocan.jp/chiptune.htm) DOCUMENTATION about [5. using Unz emulator for editing and compiling EUPHONY MML with HEat-Oh!](http://rophon.music.coocan.jp/chiptune/UnzMMLcomp.pdf), after installing TaroPYON HEat with the emulator, a complete definition of MML for FBASIC386|High-EUP compiler can be retrieved, here added as verbatim Shift-JIS encoded txt file HE386.TXT, also added a UTF-8 converted version HE386_UTF8.TXT.  
 
-Also reference about EUPHONY is [Revised 3rd edition FM TOWNS Technical Data Book](https://archive.org/details/3FmTowns/mode/2up) @ 18 MIDI manager BIOS p.605 . 18.4 About MIDI EUPHONY p.607 . 18.4.3 EUP File Format p.609 .  
+Also reference for EUPHONY information is [Revised 3rd edition FM TOWNS Technical Data Book](https://archive.org/details/3FmTowns/mode/2up) @ 18 MIDI manager BIOS p.605 . 18.4 About MIDI EUPHONY p.607 . 18.4.3 EUP File Format p.609 .  
 
-Improvements are driven by looking into wothke's [webEuphony WebAudio plugin of Eupony](https://bitbucket.org/wothke/webeuphony/src/master/) code,
+Project improvements are driven by looking into wothke's, id est Juergen Wothke, [webEuphony WebAudio plugin of Eupony](https://bitbucket.org/wothke/webeuphony/src/master/) code,
 and tjhayasaka's, id est Tomoaki Hayasaka, [eupplayer](https://github.com/tjhayasaka/eupplayer) code.  
 Thank You, Juergen Wothke !!  
 Thank You, Tomoaki Hayasaka !!  
