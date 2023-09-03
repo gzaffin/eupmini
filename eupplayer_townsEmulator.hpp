@@ -137,6 +137,8 @@ class TownsFmEmulator : public EUP_TownsEmulator_MonophonicAudioSynthesizer {
     int _frequencyOffs;
     int _frequency;
     int _algorithm;
+    int _enableL;
+    int _enableR;
 public:
     TownsFmEmulator();
     ~TownsFmEmulator();
@@ -163,6 +165,8 @@ class TownsPcmEmulator : public EUP_TownsEmulator_MonophonicAudioSynthesizer {
     int _note;
     int _frequencyOffs;
     uint64_t _phase;
+    int _volL;
+    int _volR;
 
     TownsPcmInstrument const *_currentInstrument;
     TownsPcmSound const *_currentSound;

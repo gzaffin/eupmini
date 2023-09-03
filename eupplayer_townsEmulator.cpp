@@ -661,6 +661,7 @@ TownsFmEmulator::TownsFmEmulator()
     _frequencyOffs = 0x2000;
     _algorithm = 7;
     _opr = new TownsFmEmulator_Operator[_numOfOperators];
+    _enableL = _enableR = 1;
     this->velocity(0);
 }
 
@@ -723,16 +724,16 @@ void TownsFmEmulator::setControlParameter(int control, int value)
     case 42:
         // Pan (fine) 0-127
         if (value < 0x20) {
-            //_enableL = 1;
-            //_enableR = 0;
+            _enableL = 1;
+            _enableR = 0;
         }
         else  if (value < 0x60) {
-            //_enableL = 1;
-            //_enableR = 1;
+            _enableL = 1;
+            _enableR = 1;
         }
         else {
-            //_enableL = 0;
-            //_enableR = 1;
+            _enableL = 0;
+            _enableR = 1;
         }
         break;
 
@@ -870,8 +871,8 @@ void TownsFmEmulator::nextTick(int *outbuf, int buflen)
 
         if (2 == streamAudioChannelsNum) {
             int j = 2 * i;
-            outbuf[j++] += d;
-            outbuf[j] += d;
+            outbuf[j++] += (_enableL ? d : 0);
+            outbuf[j] += (_enableR ? d : 0);
         }
         else /*(1 == streamAudioChannelsNum)*/ {
             outbuf[i] += d;
@@ -948,6 +949,7 @@ TownsPcmEmulator::TownsPcmEmulator()
     _currentInstrument = nullptr;
     _currentEnvelope = nullptr;
     _currentSound = nullptr;
+    _volL = _volR = 0x10;	// correctly only 0xf - but let's keep it shift friendly
 }
 
 TownsPcmEmulator::~TownsPcmEmulator()
@@ -984,9 +986,9 @@ void TownsPcmEmulator::setControlParameter(int control, int value)
         // Pan (fine) 0-127
         // panpot - rf5c68 seems to have an 8-bit pan register where low-nibble controls output to left
         // speaker and high-nibble the right..
-        //value -= 0x40;
-        //_volL = 0x10 - (0x10*value/0x40);
-        //_volR = 0x10 + (0x10*value/0x40);
+        value -= 0x40;
+        _volL = 0x10 - (0x10*value/0x40);
+        _volR = 0x10 + (0x10*value/0x40);
         break;
 
     case 11:
@@ -1109,8 +1111,8 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         output >>= 8;
         if (2 == streamAudioChannelsNum) {
             int j = 2 * i;
-            outbuf[j++] += output;
-            outbuf[j] += output;
+            outbuf[j++] += (_volL * output) >> 4;
+            outbuf[j] += (_volR * output) >> 4;
         }
         else /*(1 == streamAudioChannelsNum)*/ {
             outbuf[i] += output;
@@ -1406,10 +1408,10 @@ void EUP_TownsEmulator::nextTick()
             pcm.count += static_cast<int>(buflen);
 
 #if defined ( _MSC_VER )
-            delete buf1;
+            delete[] buf1;
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-            delete buf1;
+            delete[] buf1;
 #endif // __MINGW32__
         }
         else {
@@ -1541,10 +1543,10 @@ void EUP_TownsEmulator::nextTick()
             pcm.count += static_cast<int>(buflen);
 
 #if defined ( _MSC_VER )
-            delete buf1;
+            delete[] buf1;
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-            delete buf1;
+            delete[] buf1;
 #endif // __MINGW32__
         }
         else {
