@@ -350,7 +350,7 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
 
             eupInfo.first_tempo = eupHeader.first_tempo;
             //player->tempo(eupInfo.first_tempo + 30);
-            fprintf(stderr, "eupInfo.first_tempo is %d.\n", eupInfo.first_tempo);
+            fprintf(stderr, "eupInfo.first_tempo + 30 = %d.\n", eupInfo.first_tempo + 30);
 
             // ヘッダ情報のコピー
             for (trk = 0; trk < 32; trk++) {
@@ -390,7 +390,7 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
     }
 
     //player->tempo(eupbuf[2048 + 5] + 30);
-    player->tempo(eupInfo.first_tempo);
+    player->tempo(eupInfo.first_tempo + 30);
     // 初期テンポの設定のつもり.  これで正しい?
 
     // moved above
