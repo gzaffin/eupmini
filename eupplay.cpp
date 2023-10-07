@@ -350,7 +350,7 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
 
             eupInfo.first_tempo = eupHeader.first_tempo;
             //player->tempo(eupInfo.first_tempo + 30);
-            fprintf(stderr, "eupInfo.first_tempo + 30 = %d.\n", eupInfo.first_tempo + 30);
+            fprintf(stderr, "(eupInfo.first_tempo + 30) is %u.\n", static_cast<unsigned char>(eupInfo.first_tempo + 30u));
 
             // ヘッダ情報のコピー
             for (trk = 0; trk < 32; trk++) {
