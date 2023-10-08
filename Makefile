@@ -83,7 +83,7 @@ SOURCES = $(eupplay_SOURCES)
 OBJECTS = $(eupplay_OBJECTS)
 
 %.o : %.cpp
-	$(COMPILE) -o $@ $< -c
+	$(CXXCOMPILE) -o $@ $< -c
 
 $(TARGET): $(eupplay_OBJECTS)
 	@rm -f $(bin_PROGRAMS)
