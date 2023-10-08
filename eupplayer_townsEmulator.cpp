@@ -1355,7 +1355,7 @@ void EUP_TownsEmulator::nextTick()
     }
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-    int *buf0 = new int[buflen];
+    int *buf0 = new int[buflen * _outputSampleChannels];
     if (nullptr == buf0) {
         fprintf(stderr, "heap allocation problem.\n");
         fflush(stderr);
@@ -1363,7 +1363,7 @@ void EUP_TownsEmulator::nextTick()
     }
 #endif // __MINGW32__
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
-    int buf0[buflen];
+    int buf0[buflen * _outputSampleChannels];
 #endif // __GNUC__
 
     memset(buf0, 0, sizeof(buf0[0]) * buflen * _outputSampleChannels);
