@@ -576,10 +576,10 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
     return eupbuf;
 }
 
-volatile std::sig_atomic_t signal_raised = 0;
+volatile std::sig_atomic_t signal_raised;
 
 void set_signal_raised(int signal) {
-    signal_raised = 1;
+    signal_raised = signal;
 }
 
 #if defined ( _MSC_VER )
@@ -789,7 +789,7 @@ int main(int argc, char **argv)
     while (player->isPlaying()) {
         player->nextTick();
 
-        if (1 == signal_raised)
+        if (SIGINT == signal_raised)
         {
             signal_raised = 0;
             break;
