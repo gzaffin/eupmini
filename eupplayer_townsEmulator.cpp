@@ -1737,10 +1737,10 @@ void EUP_TownsEmulator::nextTick()
     }
 
 #if defined ( _MSC_VER )
-    delete buf0;
+    delete[] buf0;
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-    delete buf0;
+    delete[] buf0;
 #endif // __MINGW32__
 }
 
