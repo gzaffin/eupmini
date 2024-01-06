@@ -29,11 +29,11 @@
 #if EUPPLAYER_LITTLE_ENDIAN
 static inline uint16_t P2(uint8_t const * const p)
 {
-    return *(uint16_t const *)p;
+      return *(reinterpret_cast<uint16_t const *>(p));
 }
 static inline uint32_t P4(uint8_t const * const p)
 {
-    return *(uint32_t const *)p;
+    return *(reinterpret_cast<uint32_t const *>(p));
 }
 #else
 static inline uint16_t P2(uint8_t const * const p)
@@ -142,13 +142,11 @@ TownsPcmSound::TownsPcmSound(uint8_t const *p)
     _loopLength = static_cast<int>(P4(p+20));
     _samplingRate = static_cast<int>(P2(p + 24));
     _keyOffset = static_cast<int>(P2(p + 26));
-    _adjustedSamplingRate = (_samplingRate + _keyOffset) * (1000 * 0x10000 / 0x62);
+    int64_t adjfact = (1000 * 0x10000 / 0x62);
+    //adjfact *= (_samplingRate + _keyOffset);
+    adjfact *= _samplingRate;
+    _adjustedSamplingRate = static_cast<int>(adjfact);
     _keyNote = static_cast<int>(*(p+28));
-    _samples = new signed char[_numSamples + 1]; // append 1 sample, in order to avoid buffer overflow in liner interpolation process
-    for (int i = 0; i < _numSamples; i++) {
-        int n = static_cast<int>(p[32+i]);
-        _samples[i] = (n >= 0x80) ? static_cast<signed char>((n & 0x7f)) : static_cast<signed char>(-n);
-    }
     if (_loopStart >= _numSamples) {
         fprintf(stderr, "TownsPcmSound::TownsPcmSound: too large loopStart.  loopStart zeroed.  loopStart=0x%08x, numSamples=0x%08x\n", _loopStart, _numSamples);
         _loopStart = 0;
@@ -157,9 +155,17 @@ TownsPcmSound::TownsPcmSound(uint8_t const *p)
         fprintf(stderr, "TownsPcmSound::TownsPcmSound: too large loopLength.  loop disabled.  loopStart=0x%08x, loopLength=0x%08x, numSamples=0x%08x\n", _loopStart, _loopLength, _numSamples);
         _loopLength = 0;
     }
-    if (_loopLength != 0 && _loopStart + _loopLength < _numSamples) {
+    if ((_loopLength != 0) && (_loopStart + _loopLength < _numSamples)) {
         _numSamples = _loopStart + _loopLength;
     }
+    _samples = new signed char[_numSamples + 1]; // append 1 sample, in order to avoid buffer overflow in liner interpolation process
+    for (int i = 0; i < _numSamples; i++) {
+        // for further study why loading _samples with the following statement is not a good way
+        //_samples[i] = *(reinterpret_cast<const signed char*>(p + 32 + i));
+        uint8_t n = p[32 + i];
+        _samples[i] = (n >= 0x80u) ? static_cast<signed char>((n & 0x7fu)) : static_cast<signed char>(-n);
+    }
+    _samples[_numSamples] = 0; // append 1 sample, in order to avoid buffer overflow in liner interpolation process
     //cerr << this->describe() << '\n';
 }
 
@@ -267,7 +273,9 @@ int TownsPcmEnvelope::nextTick()
             _currentLevel = 0;
         }
         else {
-            _currentLevel = (_totalLevel*(_tickCount++)*(int64_t)1000) / (_attackRate*_rate);
+            int64_t currLvl = _totalLevel * (_tickCount++) * 1000LL;
+            currLvl /= (_attackRate * _rate);
+            _currentLevel = static_cast<int>(currLvl);
         }
         if (_currentLevel >= _totalLevel) {
             _currentLevel = _totalLevel;
@@ -283,8 +291,10 @@ int TownsPcmEnvelope::nextTick()
             _currentLevel = _totalLevel;
         }
         else {
+            int64_t currLvl = (_totalLevel - _sustainLevel) * (_tickCount++) * 1000LL;
+            currLvl /= (_decayRate * _rate);
             _currentLevel = _totalLevel;
-            _currentLevel -= ((_totalLevel-_sustainLevel)*(_tickCount++)*(int64_t)1000) / (_decayRate*_rate);
+            _currentLevel -= static_cast<int>(currLvl);
         }
         if (_currentLevel <= _sustainLevel) {
             _currentLevel = _sustainLevel;
@@ -300,8 +310,10 @@ int TownsPcmEnvelope::nextTick()
             _currentLevel = _sustainLevel;
         }
         else {
+            int64_t currLvl = _sustainLevel * (_tickCount++) * 1000LL;
+            currLvl /= (_sustainRate * _rate);
             _currentLevel = _sustainLevel;
-            _currentLevel -= (_sustainLevel*(_tickCount++)*(int64_t)1000) / (_sustainRate*_rate);
+            _currentLevel -= static_cast<int>(currLvl);
         }
         if (_currentLevel <= 0) {
             _currentLevel = 0;
@@ -317,8 +329,10 @@ int TownsPcmEnvelope::nextTick()
             _currentLevel = _releaseLevel;
         }
         else {
+            int64_t currLvl = _releaseLevel * (_tickCount++) * 1000LL;
+            currLvl /= (_releaseRate * _rate);
             _currentLevel = _releaseLevel;
-            _currentLevel -= (_releaseLevel*(_tickCount++)*(int64_t)1000) / (_releaseRate*_rate);
+            _currentLevel -= static_cast<int>(currLvl);
         }
         if (_currentLevel <= 0) {
             _currentLevel = 0;
@@ -352,14 +366,13 @@ public:
 
 TownsPcmInstrument::TownsPcmInstrument(uint8_t const *p)
 {
-    {
-        u_int n = 0;
-        for (; n < sizeof(_name)-1; n++) {
-            _name[n] = p[n];
-        }
-        _name[n] = '\0';
+    uint8_t n = 0u;
+    for (; n < sizeof(_name)-1; n++) {
+        _name[n] = p[n];
     }
-    for (int n = 0; n < _maxSplitNum; n++) {
+    _name[n] = '\0';
+
+    for (n = 0u; n < static_cast<uint8_t>(_maxSplitNum); n++) {
         _split[n] = static_cast<int>(P2(p+16+2*n));
         _soundId[n] = static_cast<int>(P4(p+32+4*n));
         _sound[n] = nullptr;
@@ -374,7 +387,7 @@ TownsPcmInstrument::TownsPcmInstrument()
 
 void TownsPcmInstrument::registerSound(TownsPcmSound const *sound)
 {
-    for (int i = 0; i < _maxSplitNum; i++) {
+    for (uint8_t i = 0u; i < static_cast<uint8_t>(_maxSplitNum); i++) {
         if (_soundId[i] == sound->id()) {
             _sound[i] = sound;
         }
@@ -384,8 +397,8 @@ void TownsPcmInstrument::registerSound(TownsPcmSound const *sound)
 TownsPcmSound const *TownsPcmInstrument::findSound(int note) const
 {
     // 少なくともどれかの split を選択できるようにしておこう
-    int splitNum;
-    for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++) {
+    uint8_t splitNum = 0u;
+    for (; splitNum < (static_cast<uint8_t>(_maxSplitNum)-1u); splitNum++) {
         if (note <= _split[splitNum]) {
             break;
         }
@@ -396,8 +409,8 @@ TownsPcmSound const *TownsPcmInstrument::findSound(int note) const
 TownsPcmEnvelope const *TownsPcmInstrument::findEnvelope(int note) const
 {
     // 少なくともどれかの split を選択できるようにしておこう
-    int splitNum;
-    for (splitNum = 0; splitNum < _maxSplitNum-1; splitNum++) {
+    uint8_t splitNum = 0u;
+    for (; splitNum < (static_cast<uint8_t>(_maxSplitNum) - 1u); splitNum++) {
         if (note <= _split[splitNum]) {
             break;
         }
@@ -411,7 +424,7 @@ TownsFmEmulator_Operator::TownsFmEmulator_Operator()
 {
     _state = _s_ready;
     _oldState = _s_ready;
-    _currentLevel = ((int64_t)0x7f << 31);
+    _currentLevel = 0x7fLL << 31;
     _phase = 0;
     _lastOutput = 0;
     _feedbackLevel = 0;
@@ -433,9 +446,9 @@ TownsFmEmulator_Operator::~TownsFmEmulator_Operator()
 void TownsFmEmulator_Operator::velocity(int velo)
 {
     _velocity = velo;
-    _totalLevel = (((int64_t)_specifiedTotalLevel << 31) +
-                   ((int64_t)(127-_velocity) << 29));
-    _sustainLevel = ((int64_t)_specifiedSustainLevel << (31+2));
+    _totalLevel = (static_cast<int64_t>(_specifiedTotalLevel) << 31) +
+                   (static_cast<int64_t>(127-_velocity) << 29);
+    _sustainLevel = static_cast<int64_t>(_specifiedSustainLevel) << (31+2);
 }
 
 void TownsFmEmulator_Operator::feedbackLevel(int level)
@@ -463,7 +476,7 @@ void TownsFmEmulator_Operator::keyOn()
     _state = _s_attacking;
     _tickCount = 0;
     _phase = 0; // どうも、実際こうらしい
-    _currentLevel = ((int64_t)0x7f << 31); // これも、実際こうらしい
+    _currentLevel = 0x7fLL << 31; // これも、実際こうらしい
 }
 
 void TownsFmEmulator_Operator::keyOff()
@@ -491,15 +504,15 @@ void TownsFmEmulator_Operator::frequency(int freq)
         r = 63 - r;
         int64_t t;
         if (_specifiedTotalLevel >= 128) {
-            t = 0;
+            t = 0LL;
         }
         else {
             t = powtbl[(r&3) << 7];
             t <<= (r >> 2);
-            t *= 41; // r == 4 のとき、0-96db が 8970.24ms
+            t *= 41LL; // r == 4 のとき、0-96db が 8970.24ms
             t >>= (15 + 5);
-            t *= 127 - _specifiedTotalLevel;
-            t /= 127;
+            t *= 127LL - static_cast<int64_t>(_specifiedTotalLevel);
+            t /= 127LL;
         }
         _attackTime = static_cast<int>(t); // 1 秒 == (1 << 12)
         //DB(("AR=%d->%d, 0-96[db]=%d[ms]\n", _specifiedAttackRate, r, (int)((t*1000)>>12)));
@@ -513,11 +526,11 @@ void TownsFmEmulator_Operator::frequency(int freq)
         }
     }
     //DB(("DR=%d->%d\n", _specifiedDecayRate, r));
-    _decayRate = 0x80;
+    _decayRate = 0x80LL;
     _decayRate *= powtbl[(r&3) << 7];
     _decayRate <<= 16 + (r >> 2);
     _decayRate >>= 1;
-    _decayRate /= 124; // r == 4 のとき、0-96db が 123985.92ms
+    _decayRate /= 124LL; // r == 4 のとき、0-96db が 123985.92ms
 
     r = _specifiedSustainRate;
     if (r != 0) {
@@ -527,11 +540,11 @@ void TownsFmEmulator_Operator::frequency(int freq)
         }
     }
     //DB(("SR=%d->%d\n", _specifiedSustainRate, r));
-    _sustainRate = 0x80;
+    _sustainRate = 0x80LL;
     _sustainRate *= powtbl[(r&3) << 7];
     _sustainRate <<= 16 + (r >> 2);
     _sustainRate >>= 1;
-    _sustainRate /= 124;
+    _sustainRate /= 124LL;
 
     r = _specifiedReleaseRate;
     if (r != 0) {
@@ -543,11 +556,11 @@ void TownsFmEmulator_Operator::frequency(int freq)
         }
     }
     //DB(("RR=%d->%d\n", _specifiedReleaseRate, r));
-    _releaseRate = 0x80;
+    _releaseRate = 0x80LL;
     _releaseRate *= powtbl[(r&3) << 7];
     _releaseRate <<= 16 + (r >> 2);
     _releaseRate >>= 1;
-    _releaseRate /= 124;
+    _releaseRate /= 124LL;
 }
 
 int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
@@ -571,13 +584,13 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
     case _s_attacking:
         ++_tickCount;
         if (_attackTime <= 0) {
-            _currentLevel = 0;
+            _currentLevel = 0LL;
             _state = _s_decaying;
         }
         else {
-            int i = ((int64_t)_tickCount << (12+10)) / ((int64_t)rate * _attackTime);
+            int i = (static_cast<int64_t>(_tickCount) << (12+10)) / (static_cast<int64_t>(rate * _attackTime));
             if (i >= 1024) {
-                _currentLevel = 0;
+                _currentLevel = 0LL;
                 _state = _s_decaying;
             }
             else {
@@ -596,15 +609,15 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
         break;
     case _s_sustaining:
         _currentLevel += _sustainRate / rate;
-        if (_currentLevel >= ((int64_t)0x7f << 31)) {
-            _currentLevel = ((int64_t)0x7f << 31);
+        if (_currentLevel >= (0x7fLL << 31)) {
+            _currentLevel = 0x7fLL << 31;
             _state = _s_ready;
         }
         break;
     case _s_releasing:
         _currentLevel += _releaseRate / rate;
-        if (_currentLevel >= ((int64_t)0x7f << 31)) {
-            _currentLevel = ((int64_t)0x7f << 31);
+        if (_currentLevel >= (0x7fLL << 31)) {
+            _currentLevel = 0x7fLL << 31;
             _state = _s_ready;
         }
         break;
@@ -614,9 +627,9 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
     };
 
     int64_t level = _currentLevel + _totalLevel;
-    int64_t output = 0;
-    if (level < ((int64_t)0x7f << 31)) {
-        int const feedback[] = {
+    int64_t output = 0LL;
+    if (level < (0x7fLL << 31)) {
+        int const feedback[8] = {
             0,
             0x400 / 16,
             0x400 / 8,
@@ -629,7 +642,7 @@ int TownsFmEmulator_Operator::nextTick(int rate, int phaseShift)
 
         _phase &= 0x3ffff;
         phaseShift >>= 2; // 正しい変調量は?  3 じゃ小さすぎで 2 じゃ大きいような。
-        phaseShift += (((int64_t)(_lastOutput) * feedback[_feedbackLevel]) >> 16); // 正しい変調量は?  16から17の間のようだけど。
+        phaseShift += (_lastOutput * feedback[_feedbackLevel & 7]) >> 16; // 正しい変調量は?  16から17の間のようだけど。
         output = sintbl[((_phase >> 7) + phaseShift) & 0x7ff];
         output >>= (level >> 34); // 正しい減衰量は?
         output *= powtbl[511 - ((level>>25)&511)];
@@ -917,7 +930,7 @@ void TownsFmEmulator::recalculateFrequency()
 
     int cfreq = frequencyTable[_note - (_note % 12)];
     int oct = _note / 12;
-    int fnum = static_cast<int>((basefreq << 13) / static_cast<int64_t>(cfreq)); // OPL の fnum と同じようなもの。
+    int fnum = static_cast<int>((basefreq << 13) / cfreq); // OPL の fnum と同じようなもの。
     //fnum += _frequencyOffs - 0x2000;
     //if (fnum < 0x2000) {
     //    fnum += 0x2000;
@@ -929,7 +942,7 @@ void TownsFmEmulator::recalculateFrequency()
     //}
 
     // _frequency は最終的にバイアス 256*1024 倍
-    _frequency = (frequencyTable[oct*12] * (int64_t)fnum) >> (13 - 10);
+    _frequency = (static_cast<int64_t>(frequencyTable[oct*12]) * static_cast<int64_t>(fnum)) >> (13 - 10);
 
     for (int i = 0; i < _numOfOperators; i++) {
         _opr[i].frequency(_frequency);
@@ -1041,9 +1054,11 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
     if (_currentEnvelope == nullptr) {
         return;
     }
-    if (_gateTime > 0 && --_gateTime <= 0) {
-        this->velocity(_offVelocity);
-        _currentEnvelope->release();
+    if (_gateTime > 0) {
+        if (--_gateTime <= 0) {
+            this->velocity(_offVelocity);
+            _currentEnvelope->release();
+        }
     }
     if (_currentEnvelope->state() == 0) {
         this->velocity(0);
@@ -1054,19 +1069,16 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         return;
     }
 
-    uint32_t phaseStep;
-    {
-        int64_t ps = frequencyTable[_note];
-        ps *= powtbl[_frequencyOffs>>4];
-        ps /= frequencyTable[_currentSound->keyNote() - _currentEnvelope->rootKeyOffset()];
-        ps *= _currentSound->adjustedSamplingRate();
-        ps /= this->rate();
-        ps >>= 16;
-        phaseStep = static_cast<uint32_t>(ps);
-    }
-    uint32_t loopLength = _currentSound->loopLength() << 16; // あらかじめ計算して
-    uint32_t numSamples = _currentSound->numSamples() << 16; // おくのは危険だぞ
-    signed char const *soundSamples = _currentSound->samples();
+    int64_t ps = frequencyTable[_note];
+    ps *= powtbl[_frequencyOffs>>4];
+    ps /= frequencyTable[_currentSound->keyNote() - _currentEnvelope->rootKeyOffset()];
+    ps *= _currentSound->adjustedSamplingRate();
+    ps /= this->rate();
+    ps >>= 16;
+
+    int loopLength = _currentSound->loopLength() << 16; // あらかじめ計算して
+    int numSamples = _currentSound->numSamples() << 16; // おくのは危険だぞ
+    const signed char *soundSamples = _currentSound->samples();
     for (int i = 0; i < buflen; i++) {
         if (loopLength > 0)
             while (_phase >= numSamples) {
@@ -1082,23 +1094,20 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
         }
 
         // 線型補間する。
-        int output;
-        {
-            uint32_t phase0 = static_cast<uint32_t>(_phase);
-            uint32_t phase1 = static_cast<uint32_t>(_phase) + 0x10000;
-            if (phase1 >= static_cast<uint32_t>(numSamples)) {
-                // it's safe even if loopLength == 0, because soundSamples[] is extended by 1 and filled with 0 (see TownsPcmSound::TownsPcmSound).
-                phase1 -= static_cast<uint32_t>(loopLength);
-            }
-            phase0 >>= 16;
-            phase1 >>= 16;
-
-            int weight1 = _phase & 0xffff;
-            int weight0 = 0x10000 - weight1;
-
-            output = soundSamples[phase0] * weight0 + soundSamples[phase1] * weight1;
-            output >>= 16;
+        int phase0 = _phase;
+        int phase1 = _phase + 0x10000;
+        if (phase1 >= numSamples) {
+            // it's safe even if loopLength == 0, because soundSamples[] is extended by 1 and filled with 0 (see TownsPcmSound::TownsPcmSound).
+            phase1 -= loopLength;
         }
+        phase0 >>= 16;
+        phase1 >>= 16;
+
+        int weight1 = _phase & 0xffff;
+        int weight0 = 0x10000 - weight1;
+
+        int output = soundSamples[phase0] * weight0 + soundSamples[phase1] * weight1;
+        output >>= 16;
 
         output *= this->velocity(); // 信じられないかも知れないけど、FM と違うんです。
         output <<= 1;
@@ -1118,7 +1127,7 @@ void TownsPcmEmulator::nextTick(int *outbuf, int buflen)
             outbuf[i] += output;
         }
 
-        _phase += phaseStep;
+        _phase += static_cast<int>(ps);
     }
 }
 
@@ -1377,7 +1386,7 @@ void EUP_TownsEmulator::nextTick()
     if (1 == _outputSampleSize) {
         if ((nullptr != this->outputStream_get()) && (true == this->output2File_read())) {
 #if defined ( _MSC_VER )
-            int8_t* buf1 = new int8_t[buflen * _outputSampleChannels];
+            int8_t *buf1 = new int8_t[buflen * _outputSampleChannels];
             if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);
@@ -1385,7 +1394,7 @@ void EUP_TownsEmulator::nextTick()
             }
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-            int8_t* buf1 = new int8_t[buflen * _outputSampleChannels];
+            int8_t *buf1 = new int8_t[buflen * _outputSampleChannels];
             if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);
@@ -1520,7 +1529,7 @@ void EUP_TownsEmulator::nextTick()
             }
 #endif // _MSC_VER
 #if defined ( __MINGW32__ )
-            int16_t*buf1 = new int16_t[buflen * _outputSampleChannels];
+            int16_t *buf1 = new int16_t[buflen * _outputSampleChannels];
             if (nullptr == buf1) {
                 fprintf(stderr, "heap allocation problem.\n");
                 fflush(stderr);

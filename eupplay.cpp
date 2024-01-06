@@ -33,8 +33,8 @@
 #include <strstream>
 
 #ifdef _MSC_VER
- // following SDL_MAIN_HANDLED macro is managed with CMake
- //#define SDL_MAIN_HANDLED
+// following SDL_MAIN_HANDLED macro is managed with CMake
+//#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #else
 #include <SDL.h>
@@ -420,7 +420,7 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
 #ifdef _MSC_VER
         std::strcat(nameBuf, "\\.eupplay\\");
 #else
-        std::strcat(nameBuf,"/.eupplay/");
+        std::strcat(nameBuf, "/.eupplay/");
 #endif
     }
     else

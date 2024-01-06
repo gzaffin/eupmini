@@ -164,7 +164,7 @@ class TownsPcmEmulator : public EUP_TownsEmulator_MonophonicAudioSynthesizer {
     int _offVelocity;
     int _note;
     int _frequencyOffs;
-    uint64_t _phase;
+    int _phase;
     int _volL;
     int _volR;
 

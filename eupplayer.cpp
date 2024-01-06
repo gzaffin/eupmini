@@ -494,7 +494,7 @@ void EUPPlayer::tempo(int t)
     int t0 = 96 * t;
     struct timeval tv{};
     tv.tv_sec = 60 / t0;
-    tv.tv_usec = ((60*1000*1000) / t0) - tv.tv_sec*1000*1000;
+    tv.tv_usec = ((60L*1000L*1000L) / t0) - tv.tv_sec*1000L*1000L;
     if (_outputDev != nullptr) {
         _outputDev->timeStep(tv);
     }
