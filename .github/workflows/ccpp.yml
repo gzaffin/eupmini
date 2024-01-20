@@ -17,7 +17,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install cmake pulseaudio sdl2 libsdl2-dev
+        sudo apt-get install cmake pulseaudio libsdl2-dev
     - name: Install Dependencies [Darwin]
       if: matrix.os == 'macos-latest'
       run: |
