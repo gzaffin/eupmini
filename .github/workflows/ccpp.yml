@@ -1,0 +1,91 @@
+name: C/C++ CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: CheckOut
+      uses: actions/checkout@v1
+
+    - name: Install Dependencies [Linux]
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install cmake libsdl2-dev
+    - name: Install Dependencies [Darwin]
+      if: matrix.os == 'macos-latest'
+      run: |
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        brew update
+        # cmake is preinstalled, trying to install it again will error out
+        brew install sdl2 pkgconfig
+    - name: Install Dependencies [Windows]
+      if: matrix.os == 'windows-latest'
+      run: |
+        pushd ..
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        .\bootstrap-vcpkg.bat
+        .\vcpkg.exe install sdl2:x64-windows vcpkg-cmake-config:x64-windows vcpkg-cmake:x64-windows
+        popd
+
+    - name: Configure [Linux]
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir build && cd build
+        cmake -D CMAKE_BUILD_TYPE=Release ..
+    - name: Configure [Darwin]
+      if: matrix.os == 'macos-latest'
+      run: |
+        mkdir build && cd build
+        cmake -D CMAKE_BUILD_TYPE=Release ..
+    - name: Configure [Windows]
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir build && cd build
+        cmake -A x64 -T host=x64 -D CMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
+
+    - name: Build [Linux]
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd build
+        cmake --build . --config Release --target eupplay
+    - name: Build [Darwin]
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd build
+        cmake --build . --config Release --target eupplay
+    - name: Add msbuild to PATH [Windows]
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1.1
+    - name: Build [Windows]
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd build
+        msbuild eupmini.sln -t:rebuild -property:Configuration=Release
+
+    - name: Check [Linux]
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd build
+        echo "Checking if eupplay works: ./eupplay -o WANDER.wav ../WANDER.EUP"
+        ./eupplay -o WANDER.wav ../WANDER.EUP
+    - name: Check [Darwin]
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd build
+        echo "Checking if eupplay works: ./eupplay -o WANDER.wav ../WANDER.EUP"
+        ./eupplay -o WANDER.wav ../WANDER.EUP
+    - name: Check  [Windows]
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd build
+        echo "Checking if eupplay works: Release\eupplay.exe -o WANDER.wav ..\WANDER.EUP"
+        Release\eupplay.exe -o WANDER.wav ..\WANDER.EUP
+
