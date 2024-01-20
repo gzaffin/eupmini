@@ -74,18 +74,18 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         cd build
-        echo "Checking if eupplay works: ./eupplay -o WANDER.wav ../WANDER.EUP"
+        echo "Checking if eupplay works: ./eupplay -o ../WANDER.wav ../WANDER.EUP"
         ./eupplay -o WANDER.wav ../WANDER.EUP
     - name: Check [Darwin]
       if: matrix.os == 'macos-latest'
       run: |
         cd build
-        echo "Checking if eupplay works: ./eupplay -o WANDER.wav ../WANDER.EUP"
+        echo "Checking if eupplay works: ./eupplay -o ../WANDER.wav ../WANDER.EUP"
         ./eupplay -o WANDER.wav ../WANDER.EUP
     - name: Check  [Windows]
       if: matrix.os == 'windows-latest'
       run: |
         cd build
-        echo "Checking if eupplay works: Release\eupplay.exe -o WANDER.wav ..\WANDER.EUP"
+        echo "Checking if eupplay works: Release\eupplay.exe -o ..\WANDER.wav ..\WANDER.EUP"
         Release\eupplay.exe -o WANDER.wav ..\WANDER.EUP
 
