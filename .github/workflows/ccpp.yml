@@ -17,7 +17,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install cmake pulseaudio libsdl2-dev
+        sudo apt-get install cmake alsa-utils libsdl2-dev
     - name: Install Dependencies [Darwin]
       if: matrix.os == 'macos-latest'
       run: |
@@ -74,7 +74,6 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         cd build
-        export SDL_AUDIODRIVER="pulse"
         echo "Checking if eupplay works: ./eupplay -o ../WANDER.wav ../WANDER.EUP"
         ./eupplay -o WANDER.wav ../WANDER.EUP
     - name: Check [Darwin]
