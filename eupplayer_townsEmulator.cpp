@@ -172,7 +172,7 @@ TownsPcmSound::TownsPcmSound(uint8_t const *p)
 TownsPcmSound::~TownsPcmSound()
 {
     if (_samples != nullptr) {
-        delete _samples;
+        delete[] _samples;
     }
 }
 
@@ -1404,6 +1404,7 @@ void EUP_TownsEmulator::nextTick()
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
             int8_t buf1[buflen * _outputSampleChannels];
 #endif // __GNUC__
+            memset(buf1, 0, sizeof(buf1[0]) * buflen * _outputSampleChannels);
 
             for (int i = 0; i < buflen * _outputSampleChannels; i++) {
                 int d = buf0[i];
@@ -1537,8 +1538,9 @@ void EUP_TownsEmulator::nextTick()
             }
 #endif // __MINGW32__
 #if defined ( __GNUC__ ) && !defined ( __MINGW32__ )
-            int16_t buf1[buflen * 2];
+            int16_t buf1[buflen * _outputSampleChannels];
 #endif // __GNUC__
+            memset(buf1, 0, sizeof(buf1[0])* buflen* _outputSampleChannels);
 
             for (int i = 0; i < buflen * _outputSampleChannels; i++) {
                 int d = buf0[i];
