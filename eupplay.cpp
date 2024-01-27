@@ -742,7 +742,7 @@ int main(int argc, char **argv)
         std::memset(&aRequested, 0, sizeof(aRequested));
 
         aRequested.freq = streamAudioRate;
-        aRequested.format = (true == dev->outputSampleLSBFirst_read()) ? AUDIO_S16LSB : AUDIO_S16MSB;
+        aRequested.format = ( true == dev->outputSampleLSBFirst_read() ) ? AUDIO_S16LSB : AUDIO_S16MSB;
         aRequested.channels = streamAudioChannelsNum;
         aRequested.samples = streamAudioSamplesBlock;
         aRequested.callback = audio_callback;
