@@ -1329,12 +1329,12 @@ void EUP_TownsEmulator::setPcmInstrumentParameters(uint8_t const *instrument, si
     }
 }
 
-void EUP_TownsEmulator::outputStream(FILE *ostr)
+void EUP_TownsEmulator::outputStream(FILE* ostr)
 {
     _ostr = ostr;
 }
 
-FILE * EUP_TownsEmulator::outputStream_get()
+FILE* EUP_TownsEmulator::outputStream_get()
 {
     return _ostr;
 }

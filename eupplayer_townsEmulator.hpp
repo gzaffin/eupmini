@@ -198,7 +198,7 @@ public:
 };
 
 class EUP_TownsEmulator : public TownsAudioDevice {
-    FILE *_ostr;
+    FILE *_ostr = nullptr;
     enum { _maxChannelNum = 16,
            _maxFmInstrumentNum = 128,
            _maxPcmInstrumentNum = 32,
@@ -215,7 +215,7 @@ class EUP_TownsEmulator : public TownsAudioDevice {
     int _outputSampleSize;
     int _outputSampleChannels;
     bool _outputSampleLSBFirst;
-    bool _output2File;
+    bool _output2File = false;
 public:
     EUP_TownsEmulator();
     ~EUP_TownsEmulator();
@@ -251,8 +251,8 @@ public:
     void assignPcmDeviceToChannel(int channel);
     void setFmInstrumentParameter(int num, uint8_t const *instrument);
     void setPcmInstrumentParameters(uint8_t const *instrument, size_t size);
-    void outputStream(FILE *ostr);
-    FILE * outputStream_get();
+    void outputStream(FILE* ostr);
+    FILE* outputStream_get();
     void nextTick();
     void enable(int ch, bool en=true);
     void note(int channel, int n,

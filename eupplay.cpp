@@ -595,8 +595,6 @@ int main(int argc, char **argv)
 int main(int argc, char **argv)
 #endif // __GNUC__ && !__MINGW32__
 {
-    FILE *outputFile = nullptr;
-
     EUP_TownsEmulator *dev = new EUP_TownsEmulator;
     EUPPlayer *player = new EUPPlayer;
     /* signed 16 bit sample, little endian */
@@ -626,6 +624,8 @@ int main(int argc, char **argv)
             }
             break;
             case 'o': {
+                FILE* outputFile = nullptr;
+
                 outputFile = fopen(optarg, "wb");
                 if (outputFile == nullptr) {
                     fprintf(stderr, "Cannot open output file(%s)\n", optarg);
@@ -707,64 +707,66 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    SDL_version compiled;
-    SDL_VERSION(&compiled);
-    printf("compiled with SDL version %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch);
-    std::fflush(stdout);
-
-    SDL_version linked;
-    SDL_GetVersion(&linked);
-    printf("linked SDL version %d.%d.%d\n", linked.major, linked.minor, linked.patch);
-    std::fflush(stdout);
-
-    /* Enable standard application logging */
-    SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
-
-    /* Load the SDL library */
-    if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_EVENTS) < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL: %s\n", SDL_GetError());
-        exit(1);
-    }
-
-    /* Log the list of available audio drivers */
-    SDL_Log("Available audio drivers:");
-    for (c = 0; c < SDL_GetNumAudioDrivers(); ++c) {
-        SDL_Log("%i: %s", c, SDL_GetAudioDriver(c));
-    }
-
-    /* Log used audio driver */
-    SDL_Log("Using audio driver: %s\n", SDL_GetCurrentAudioDriver());
-
-    SDL_AudioSpec aRequested/*, aGranted*/;
-
-    /* re-inizialize aRequested struct */
-    std::memset(&aRequested, 0, sizeof(aRequested));
-
-    aRequested.freq = streamAudioRate;
-    aRequested.format = ( true == dev->outputSampleLSBFirst_read() ) ? AUDIO_S16LSB : AUDIO_S16MSB;
-    aRequested.channels = streamAudioChannelsNum;
-    aRequested.samples = streamAudioSamplesBlock;
-    aRequested.callback = audio_callback;
-    aRequested.userdata = nullptr;
-
-/*    if (SDL_OpenAudio(&aRequested,&aGranted) < 0) {*/
-    if (SDL_OpenAudio(&aRequested, nullptr) < 0) {
-        printf("Audio open error!!\n");
+    if ( (nullptr == dev->outputStream_get()) && (false == dev->output2File_read()) ) {
+        SDL_version compiled;
+        SDL_VERSION(&compiled);
+        printf("compiled with SDL version %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch);
         std::fflush(stdout);
-        exit(1);
+
+        SDL_version linked;
+        SDL_GetVersion(&linked);
+        printf("linked SDL version %d.%d.%d\n", linked.major, linked.minor, linked.patch);
+        std::fflush(stdout);
+
+        /* Enable standard application logging */
+        SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
+
+        /* Load the SDL library */
+        if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL: %s\n", SDL_GetError());
+            exit(1);
+        }
+
+        /* Log the list of available audio drivers */
+        SDL_Log("Available audio drivers:");
+        for (c = 0; c < SDL_GetNumAudioDrivers(); ++c) {
+            SDL_Log("%i: %s", c, SDL_GetAudioDriver(c));
+        }
+
+        /* Log used audio driver */
+        SDL_Log("Using audio driver: %s\n", SDL_GetCurrentAudioDriver());
+
+        SDL_AudioSpec aRequested/*, aGranted*/;
+
+        /* re-inizialize aRequested struct */
+        std::memset(&aRequested, 0, sizeof(aRequested));
+
+        aRequested.freq = streamAudioRate;
+        aRequested.format = (true == dev->outputSampleLSBFirst_read()) ? AUDIO_S16LSB : AUDIO_S16MSB;
+        aRequested.channels = streamAudioChannelsNum;
+        aRequested.samples = streamAudioSamplesBlock;
+        aRequested.callback = audio_callback;
+        aRequested.userdata = nullptr;
+
+        /*    if (SDL_OpenAudio(&aRequested,&aGranted) < 0) {*/
+        if (SDL_OpenAudio(&aRequested, nullptr) < 0) {
+            printf("Audio open error!!\n");
+            std::fflush(stdout);
+            exit(1);
+        }
+        /*    if (aRequested.freq != aGranted.freq) {
+                SDL_Log("Granted freq %d\n", (int)aGranted.freq);
+            }
+            if (aRequested.format != aGranted.format) {
+                SDL_Log("Granted format %d\n", (int)aGranted.format);
+            }
+            if (aRequested.channels != aGranted.channels) {
+                SDL_Log("Granted channels %d\n", (int)aGranted.channels);
+            }
+            if (aRequested.samples != aGranted.samples) {
+                SDL_Log("Granted samples %d\n", (int)aGranted.samples);
+            }*/
     }
-/*    if (aRequested.freq != aGranted.freq) {
-        SDL_Log("Granted freq %d\n", (int)aGranted.freq);
-    }
-    if (aRequested.format != aGranted.format) {
-        SDL_Log("Granted format %d\n", (int)aGranted.format);
-    }
-    if (aRequested.channels != aGranted.channels) {
-        SDL_Log("Granted channels %d\n", (int)aGranted.channels);
-    }
-    if (aRequested.samples != aGranted.samples) {
-        SDL_Log("Granted samples %d\n", (int)aGranted.samples);
-    }*/
 
     /* re-inizialize pcm struct */
     std::memset(&pcm, 0, sizeof(pcm));
@@ -781,8 +783,10 @@ int main(int argc, char **argv)
 
     if (true == player->isPlaying()) {
         pcm.on = true;
-        /* Let start the callback function play the audio chunk */
-        SDL_PauseAudio(SDL_FALSE);
+        if ( (nullptr == dev->outputStream_get()) && (false == dev->output2File_read()) ) {
+            /* Let start the callback function play the audio chunk */
+            SDL_PauseAudio(SDL_FALSE);
+        }
     }
 
     std::signal(SIGINT, set_signal_raised);
@@ -797,8 +801,10 @@ int main(int argc, char **argv)
     }
 
     pcm.on = false;
-    /* Stop the callback function playing the audio chunk */
-    SDL_PauseAudio(SDL_TRUE);
+    if ( (nullptr == dev->outputStream_get()) && (false == dev->output2File_read()) ) {
+        /* Stop the callback function playing the audio chunk */
+        SDL_PauseAudio(SDL_TRUE);
+    }
 
     if ( (nullptr != dev->outputStream_get()) && (true == dev->output2File_read()) ) {
         // audio_write_wav_header
@@ -820,7 +826,7 @@ int main(int argc, char **argv)
         fseek(dev->outputStream_get(), 4, SEEK_SET);
         fwrite(littleEndianDWORD, 4, 1, dev->outputStream_get());
 
-        fclose(outputFile);
+        fclose(dev->outputStream_get());
     }
 
     delete player;
