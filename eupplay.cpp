@@ -30,7 +30,6 @@
 #include <sys/stat.h>
 #include <cstring>
 #include <vector>
-#include <strstream>
 
 #ifdef _MSC_VER
 // following SDL_MAIN_HANDLED macro is managed with CMake
