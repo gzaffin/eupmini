@@ -267,17 +267,17 @@ uint8_t *EUPPlayer_readFile(EUPPlayer *player,
         char    dummy[44]; // オフセット/offset 028h
         char    trk_name[32][16]; // オフセット/offset 084h 512 = 32 * 16
         char    short_trk_name[32][8]; // オフセット/offset 254h 256 = 32 * 8
-        char    trk_mute[32]; // オフセット/offset 354h
-        char    trk_port[32]; // オフセット/offset 374h
-        char    trk_midi_ch[32]; // オフセット/offset 394h
-        char    trk_key_bias[32]; // オフセット/offset 3B4h
-        char    trk_transpose[32]; // オフセット/offset 3D4h
+        char    trk_mute[32]; // オフセット/offset 354h e.g. for(i=0 ; i<32 ;i++) { err=SND_eup_mute_set(i,(int)buffer[i]); }
+        char    trk_port[32]; // オフセット/offset 374h e.g. for(i=0 ; i<32 ;i++) { err=SND_eup_port_set(i,(int)buffer[i]); }
+        char    trk_midi_ch[32]; // オフセット/offset 394h e.g. for(i=0 ; i<32 ;i++) { err=SND_eup_midi_ch_set(i,(int)buffer[i]); }
+        char    trk_key_bias[32]; // オフセット/offset 3B4h e.g. for(i=0 ; i<32 ;i++) { err=SND_eup_bias_set(i,(int)buffer[i]); }
+        char    trk_transpose[32]; // オフセット/offset 3D4h e.g. for(i=0 ; i<32 ;i++) { err=SND_eup_transpose_set(i,(int)buffer[i]); }
         char    trk_play_filter[32][7]; // オフセット/offset 3F4h 224 = 32 * 7
                                         // ＦＩＬＴＥＲ：形式１ ベロシティフィルター/Format 1 velocity filter ＦＩＬＴＥＲ：形式２ ボリュームフィルター/FILTER: Format 2 volume filter ＦＩＬＴＥＲ：形式３ パンポットフィルター/FILTER: Format 3 panpot filter have 7 typed parameters 1 byte sized each parameter
                                         // ＦＩＬＴＥＲ：形式４ ピッチベンドフィルター/Format 4 pitch bend filter has 7 typed parameters some parameters are 2 bytes sized
         char    instruments_name[128][4]; // オフセット/offset 4D4h 512 = 128 * 4
-        char    fm_midi_ch[6]; // オフセット/offset 6D4h
-        char    pcm_midi_ch[8]; // オフセット/offset 6DAh
+        char    fm_midi_ch[6]; // オフセット/offset 6D4h channel assign e.g. for(i = 0;i < 6;i++) { err=SND_midi_ch_assign(i,(int)buffer[i]); }
+        char    pcm_midi_ch[8]; // オフセット/offset 6DAh channel assign e.g. for(i = 0;i < 8;i++) { err=SND_midi_ch_assign(i+64,(int)buffer[i]); }
         char    fm_file_name[8]; // オフセット/offset 6E2h
         char    pcm_file_name[8]; // オフセット/offset 6EAh
         char    reserved[260]; // オフセット/offset 6F2h 260 = (32 * 8) + 4 ??? ＦＩＬＴＥＲ：形式４ ピッチベンドフィルター/Format 4 pitch bend filter additional space ???
