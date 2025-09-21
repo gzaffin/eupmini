@@ -25,6 +25,16 @@ Hereafter some informative tables taken fron that reference document are copied 
 | チャネルプレッシャー | $Dn | TRACK番号 | TIME LSB | TIME MSB | PRESSER値 | ダミー | 圧力値を指定する. |
 | ピッチベンド | $En | TRACK番号 | TIME LSB | TIME MSB | BEND値 LSB | BEND値 MSB | ベンド値(上位,下位7ビットずつの計14番号ビット)を指定する. |
 
+#### Table II-18-6 EUP フォーマット(システムエクスクルーシブイベント)  
+| Event | Format |||||| 説明 |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+|| Status (1st byte) | 2nd byte | 3rd byte | 4th byte | 5th byte | 6th byte        ||
+| エクスクルーシブステータス | $F0 | TRACK番号 | TIME LSB | TIME MSB | ダミー($FF) | ダミー($FF) | エクスクルーシブデータの最初のパケット |
+| データ |データ列不定バイト数(6バイト単位)|||||| 6の倍数バイトで任意のデータが並ぶ(余った部分は$FFで埋める) |
+| END OF エクスクルーシブ | $F7 | ダミー($FF) | ダミー($FF) | ダミー($FF) | ダミー($FF) | ダミー($FF) | エクスクルーシブデータの最後のパケット |
+
+エクスクルーシブデータの最初のパケットにはデータは入らず,2番目のパケットからデータが入る.このエクスクルーシブの間には他のパケットが入ってはならず,また,最後は必ず$F7(End of Exclusive)の含まれるパケットで終わらなければならない.その場合 パケット内の余分なところには$FFを入れる.
+
 #### table II-18-7 EUP フォーマット(その他のイベント)  
 | イベント | フォーマット |||||| 説明 |
 | -- | -- | -- | -- | -- | -- | -- | -- |
@@ -51,6 +61,16 @@ translated they should be
 | Programme Change        | $Cn | TRACK number   | TIME LSB       | TIME MSB       | PROGRAM value  | Dummy          | Specifies programme number.                                           |
 | Channel Pressure        | $Dn | TRACK Number   | TIME LSB       | TIME MSB       | PRESSER Value  | Dummy          | Specifies the pressure value.                                         |
 | Pitch Bend              | $En | TRACK Number   | TIME LSB       | TIME MSB       | BEND Value LSB | BEND Value MSB | Specifies the bend value (14 bits total: upper 7 bits, lower 7 bits). |
+
+#### Table II-18-6 EUP Format (System Exclusive Event)  
+| Event | Format |||||| Description |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+|| Status (1st byte) | 2nd byte | 3rd byte | 4th byte | 5th byte | 6th byte        ||
+| Exclusive Status | $F0 | TRACK Number | TIME LSB | TIME MSB | Dummy ($FF) | Dummy ($FF) | First packet of exclusive data |
+| Data | Data sequence with variable byte count (in 6-byte units)|||||| Any data arranged in multiples of 6 bytes (remaining space filled with $FF) |
+| END OF Exclusive | $F7 | Dummy ($FF) | Dummy ($FF) | Dummy ($FF) | Dummy ($FF) | Dummy ($FF) | Last packet of exclusive data |
+
+The first packet of exclusive data contains no data; data begins from the second packet. No other packets may occur within this exclusive section, and it must always end with a packet containing $F7 (End of Exclusive). In such cases, any remaining space within the packet must be filled with $FF.
 
 #### table II-18-7 EUP Format (Other Events)  
 | Event | Format |||||| Description |
