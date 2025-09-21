@@ -12,6 +12,59 @@ Following [chiptune create ROPCHIPTUNE LABORATORY 3.00](http://rophon.music.cooc
 
 Also reference document for EUPHONY information is [Revised 3rd edition FM TOWNS Technical Data Book](https://archive.org/details/3FmTowns/mode/2up) @ 18 MIDI manager BIOS p.605 . 18.4 About MIDI EUPHONY p.607 . 18.4.3 EUP File Format p.609 .  
 
+Hereafter some informative tables taken fron that reference document are copied here  
+#### table II-18-5 EUP フォーマット(チャンネルイベント)  
+| イベント | フォーマット | | | | | | 説明 |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+|| ステータス(1バイト) | 2バイト | 3バイト | 4バイト | 5バイト | 6バイト ||
+| ノートオフ | $8n | Duration LSW L | Duration LSW H | Duration MSW L | Duration MSW H | OFF VELO | ノートの長さ(Duration)は下位4ビットずつを取り出して16ビットにする. |
+| ノートオン | $9n | TRACK番号 | TIME LSB | TIME MSB | 音程 | ON VELO | ノートオンは必ず対となるノートオフが直後に来る. |
+| ポリフォニックキープレッシャー | $An | TRACK番号 | TIME LSB | TIME MSB | 音程 (NOTE) | プレッシャー | ノート番号とする. |
+| コントロールチェンジ | $Bn | TRACK番号 | TIME LSB | TIME MSB | CONTROL値 | 設定値 | コントロール番号とコントロール値を指定する. |
+| プログラムチェンジ | $Cn | TRACK番号 | TIME LSB | TIME MSB | PROGRAM値 | ダミー | プログラム番号を指定する. |
+| チャネルプレッシャー | $Dn | TRACK番号 | TIME LSB | TIME MSB | PRESSER値 | ダミー | 圧力値を指定する. |
+| ピッチベンド | $En | TRACK番号 | TIME LSB | TIME MSB | BEND値 LSB | BEND値 MSB | ベンド値(上位,下位7ビットずつの計14番号ビット)を指定する. |
+
+#### table II-18-7 EUP フォーマット(その他のイベント)  
+| イベント | フォーマット |||||| 説明 |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+|| ステータス(1バイト) | 2バイト | 3バイト | 4バイト | 5バイト | 6バイト ||
+| 小節マーカー | $F2 | 拍子値 | TIME LSB | TIME MSB | ダミー | ダミー | 重要なイベントで,EUPフォーマットでは1小節毎に必ずこの小節マーカーがなければならない.TimeL,TimeHはこの小節マーカーまでの時間,つまり前の小節の長さが入る.signatureにはこの小節の拍子が入る.この小節マーカーのTimeL,TimeHと前の小節マーカーのsignatureが矛盾しないことが重要で,例えば,前の小節マーカーのsignatureが4/4なら,この小節マーカーのTimeは384(96*4)でなければならない. |
+| テンポ | $F8 | ダミー | TIME LSB | TIME MSB | tempo LSB | tempo MSB | テンポは14ビットで表現する.取りうる範囲は0\~250までで,実際の値はそれに30を足した,30bpm\~280bpmとなる. |
+| USER CALL PROGRAM (NOT SUPPORT) | $FA | TRACK番号 | TIME LSB | TIME MSB | PROGRAM値 | ダミー | 未サポート |
+| パターン番号 (NOT SUPPORT) | $FB | TRACK番号 | TIME LSB | TIME MSB | パターン番号 | ダミー | 未サポート |
+| TRACK COMMAND | $FC | TRACK番号 | TIME LSB | TIME MSB | コマンド | データ(変更値) | 演奏中にポートやMIDIチャネルを変更する.コマンド=1:ポート,2:チャネル |
+| DATA CONTINUE | $FD | - | - | - | - | - | 曲データが継続することを意味する,リングバッファなどにデータを転送しながら演奏する場合などに,MIDIマネーが書き込みポインタを追い越しでもしまわないようにす計ために利用する. |
+| 終端マーカー | $FE | 拍子値 | TIME LSB | TIME MSB | ダミー | ダミー | 曲の最後には必ずこのマーカーを入れる.TimeL,TimeHはこの小節マーカー同様にこの終端マーカーまでの時間,つまり最後の小節の長さが入る. |
+| ダミーコード | $FF | - | - | - | - | - | 何もしないイベントとして扱われる(無視される). |
+
+translated they should be  
+
+#### Table II-18-5 EUP Format (Channel Event)  
+| Event | Format |||||| Description |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+|| Status (1st byte) | 2nd byte | 3rd byte | 4th byte | 5th byte | 6th byte        ||
+| Note Off                | $8n | Duration LSW L | Duration LSW H | Duration MSW L | Duration MSW H | OFF VELO       | Note duration is extracted in 4-bit chunks to form a 16-bit value.    |
+| Note On                 | $9n | TRACK number   | TIME LSB       | TIME MSB       | Pitch          | ON VELO        | Note On must be followed immediately by its corresponding Note Off.   |
+| Polyphonic Key Pressure | $An | TRACK number   | TIME LSB       | TIME MSB       | Pitch (NOTE)   | Pressure       | Used as the note number.                                              |
+| Control Change          | $Bn | TRACK number   | TIME LSB       | TIME MSB       | CONTROL value  | Setting value  | Specifies control number and control value.                           |
+| Programme Change        | $Cn | TRACK number   | TIME LSB       | TIME MSB       | PROGRAM value  | Dummy          | Specifies programme number.                                           |
+| Channel Pressure        | $Dn | TRACK Number   | TIME LSB       | TIME MSB       | PRESSER Value  | Dummy          | Specifies the pressure value.                                         |
+| Pitch Bend              | $En | TRACK Number   | TIME LSB       | TIME MSB       | BEND Value LSB | BEND Value MSB | Specifies the bend value (14 bits total: upper 7 bits, lower 7 bits). |
+
+#### table II-18-7 EUP Format (Other Events)  
+| Event | Format |||||| Description |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+|| Status (1st byte) | 2nd byte | 3rd byte | 4th byte | 5th byte | 6th byte        ||
+| Measure Marker                  | $F2 | Time Signature | TIME LSB | TIME MSB | Dummy | Dummy | In the EUP format, this measure marker must be present for every measure during important events. TimeL and TimeH contain the time up to this measure marker, i.e. the length of the preceding measure. The signature contains the time signature for this measure. It is crucial that the TimeL and TimeH of this measure marker do not conflict with the signature of the preceding measure marker. For example, if the signature of the preceding measure marker is 4/4, then the Time of this measure marker must be 384 (96*4). |
+| Tempo                           | $F8 | Dummy | TIME LSB | TIME MSB | tempo LSB | tempo MSB | Tempo is expressed in 14-bit resolution. The possible range is 0~250, with the actual value being 30 added to this, resulting in 30 bpm to 280 bpm. |
+| USER CALL PROGRAM (NOT SUPPORT) | $FA | TRACK number | TIME LSB | TIME MSB | PROGRAM value | Dummy | Not supported |
+| Pattern Number (NOT SUPPORT)    | $FB | TRACK Number | TIME LSB | TIME MSB | Pattern Number | Dummy | Not supported |
+| TRACK COMMAND                   | $FC | TRACK Number | TIME LSB | TIME MSB | Command | Data (Modified Value) | Changing ports or MIDI channels during performance. Command=1:Port,2:Channel |
+| DATA CONTINUE                   | $FD | - | - | - | - | - |  This is used to prevent the MIDI stream from overwriting the write pointer when transferring data to a ring buffer or similar during playback, thereby ensuring the track data remains continuous. |
+| Termination Marker              | $FE | Time Value | TIME LSB | Time MSB | Dummy | Dummy | This marker must always be inserted at the end of the piece. TimeL and TimeH, like this measure marker, contain the time to this end marker, that is, the length of the final measure. |
+| Dummy Code                      | $FF | - | - | - | - | - | Treated as an event that does nothing (ignored). |  
+
 Project improvements are driven by looking into wothke's, id est Juergen Wothke, [webEuphony WebAudio plugin of Eupony](https://bitbucket.org/wothke/webeuphony/src/master/) code,
 and tjhayasaka's, id est Tomoaki Hayasaka, [eupplayer](https://github.com/tjhayasaka/eupplayer) code.  
 Thank You, Juergen Wothke !!  
@@ -22,11 +75,11 @@ Copyright
 Win32 porting 2002, 2003 IIJIMA Hiromitsu aka Delmonta, and anonymous K.
 2023 Giangiacomo Zaffini  
 
-# License  
+### License  
 
 This code is available open source under the terms of the [GNU General Public License version 2](https://opensource.org/licenses/GPL-2.0).  
 
-# How to build eupplay player  
+### How to build eupplay player  
 
 The following steps build `eupplay` on Ubuntu/Debian/GNU/LINUX o.s. box with SDL2 and cmake.  
 
@@ -62,7 +115,7 @@ C:\eupmini\build>cmake -G "Visual Studio 17 2022" -A x64 -T host=x64 -D CMAKE_TO
 ```
 Now Microsoft Visual Studio can be started and eupmini solution can be built and debugged.  
 
-# Links:
+#### Links:
 
 1. Lost and Found projects
 [EUPPlayer for Windows O.S.](http://heisei.dennougedougakkai-ndd.org/pub/werkzeug/EUPPlayer/)  
