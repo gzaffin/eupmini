@@ -26,9 +26,9 @@ Hereafter some informative tables taken fron that reference document are copied 
 | ピッチベンド | $En | TRACK番号 | TIME LSB | TIME MSB | BEND値 LSB | BEND値 MSB | ベンド値(上位,下位7ビットずつの計14番号ビット)を指定する. |
 
 #### Table II-18-6 EUP フォーマット(システムエクスクルーシブイベント)  
-| Event | Format |||||| 説明 |
+| イベント | フォーマット |||||| 説明 |
 | -- | -- | -- | -- | -- | -- | -- | -- |
-|| Status (1st byte) | 2nd byte | 3rd byte | 4th byte | 5th byte | 6th byte        ||
+|| ステータス(1バイト) | 2バイト | 3バイト | 4バイト | 5バイト | 6バイト ||
 | エクスクルーシブステータス | $F0 | TRACK番号 | TIME LSB | TIME MSB | ダミー($FF) | ダミー($FF) | エクスクルーシブデータの最初のパケット |
 | データ |データ列不定バイト数(6バイト単位)|||||| 6の倍数バイトで任意のデータが並ぶ(余った部分は$FFで埋める) |
 | END OF エクスクルーシブ | $F7 | ダミー($FF) | ダミー($FF) | ダミー($FF) | ダミー($FF) | ダミー($FF) | エクスクルーシブデータの最後のパケット |
