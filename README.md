@@ -12,8 +12,8 @@ Following [chiptune create ROPCHIPTUNE LABORATORY 3.00](http://rophon.music.cooc
 
 Also reference document for EUPHONY information is [Revised 3rd edition FM TOWNS Technical Data Book](https://archive.org/details/3FmTowns/mode/2up) @ 18 MIDI manager BIOS p.605 . 18.4 About MIDI EUPHONY p.607 . 18.4.3 EUP File Format p.609 .  
 
-Hereafter some informative tables taken fron that reference document are copied here  
-#### table II-18-5 EUP フォーマット(チャンネルイベント)  
+Hereafter some informative tables taken from that reference document  
+#### Table II-18-5 EUP フォーマット(チャンネルイベント)  
 | イベント | フォーマット | | | | | | 説明 |
 | -- | -- | -- | -- | -- | -- | -- | -- |
 || ステータス(1バイト) | 2バイト | 3バイト | 4バイト | 5バイト | 6バイト ||
@@ -35,7 +35,7 @@ Hereafter some informative tables taken fron that reference document are copied 
 
 エクスクルーシブデータの最初のパケットにはデータは入らず,2番目のパケットからデータが入る.このエクスクルーシブの間には他のパケットが入ってはならず,また,最後は必ず$F7(End of Exclusive)の含まれるパケットで終わらなければならない.その場合 パケット内の余分なところには$FFを入れる.
 
-#### table II-18-7 EUP フォーマット(その他のイベント)  
+#### Table II-18-7 EUP フォーマット(その他のイベント)  
 | イベント | フォーマット |||||| 説明 |
 | -- | -- | -- | -- | -- | -- | -- | -- |
 || ステータス(1バイト) | 2バイト | 3バイト | 4バイト | 5バイト | 6バイト ||
@@ -72,7 +72,7 @@ translated they should be
 
 The first packet of exclusive data contains no data; data begins from the second packet. No other packets may occur within this exclusive section, and it must always end with a packet containing $F7 (End of Exclusive). In such cases, any remaining space within the packet must be filled with $FF.
 
-#### table II-18-7 EUP Format (Other Events)  
+#### Table II-18-7 EUP Format (Other Events)  
 | Event | Format |||||| Description |
 | -- | -- | -- | -- | -- | -- | -- | -- |
 || Status (1st byte) | 2nd byte | 3rd byte | 4th byte | 5th byte | 6th byte        ||
